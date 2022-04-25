@@ -1,140 +1,140 @@
-## Yolact-keras实例分割模型在pytorch当中的实现
+## Yolact-keras實例分割模型在pytorch當中的實現
 ---
 
-## 目录
-1. [性能情况 Performance](#性能情况)
-2. [所需环境 Environment](#所需环境)
-3. [文件下载 Download](#文件下载)
-4. [训练步骤 How2train](#训练步骤)
-5. [预测步骤 How2predict](#预测步骤)
-6. [评估步骤 How2eval](#评估步骤)
-7. [参考资料 Reference](#Reference)
+## 目錄
+1. [性能情況 Performance](#性能情況)
+2. [所需環境 Environment](#所需環境)
+3. [文件下載 Download](#文件下載)
+4. [訓練步驟 How2train](#訓練步驟)
+5. [預測步驟 How2predict](#預測步驟)
+6. [評估步驟 How2eval](#評估步驟)
+7. [參考資料 Reference](#Reference)
 
-## 性能情况
-| 训练数据集 | 权值文件名称 | 测试数据集 | 输入图片大小 | bbox mAP 0.5:0.95 | bbox mAP 0.5 | segm mAP 0.5:0.95 | segm mAP 0.5 |
+## 性能情況
+| 訓練數據集 | 權值文件名稱 | 測試數據集 | 輸入圖片大小 | bbox mAP 0.5:0.95 | bbox mAP 0.5 | segm mAP 0.5:0.95 | segm mAP 0.5 |
 | :-----: | :-----: | :------: | :------: | :------: | :-----: | :-----: | :-----: | 
 | COCO-Train2017 | [yolact_weights_coco.pth](https://github.com/bubbliiiing/yolact-pytorch/releases/download/v1.0/yolact_weights_coco.pth) | COCO-Val2017 | 544x544 | 30.4 | 52.0 | 27.3 | 47.7
 
-## 所需环境
+## 所需環境
 pytorch==1.2.0  
 torchvision==0.4.0
 
-## 文件下载
-训练所需的预训练权值可在百度网盘中下载。  
-链接: https://pan.baidu.com/s/1IUlcrGoAJM-ujBV4SsjR8Q     
-提取码: nxjk    
+## 文件下載
+訓練所需的預訓練權值可在百度網盤中下載。
+鏈接: https://pan.baidu.com/s/1IUlcrGoAJM-ujBV4SsjR8Q     
+提取碼: nxjk    
 
-shapes数据集下载地址如下，该数据集是使用labelme标注的结果，尚未经过其它处理，用于区分三角形和正方形：  
-链接: https://pan.baidu.com/s/1hrCaEYbnSGBOhjoiOKQmig   
-提取码: jk44    
+shapes數據集下載地址如下，該數據集是使用labelme標註的結果，尚未經過其它處理，用於區分三角形和正方形：  
+鏈接: https://pan.baidu.com/s/1hrCaEYbnSGBOhjoiOKQmig   
+提取碼: jk44    
 
-## 训练步骤
-### a、训练shapes形状数据集
-1. 数据集的准备   
-在**文件下载**部分，通过百度网盘下载数据集，下载完成后解压，将图片和对应的json文件放入根目录下的datasets/before文件夹。
+## 訓練步驟
+### a、訓練shapes形狀數據集
+1. 數據集的準備   
+在**文件下載**部分，通過百度網盤下載數據集，下載完成後解壓，將圖片和對應的json文件放入根目錄下的datasets/before文件夾。
 
-2. 数据集的处理   
-打开coco_annotation.py，里面的参数默认用于处理shapes形状数据集，直接运行可以在datasets/coco文件夹里生成图片文件和标签文件，并且完成了训练集和测试集的划分。
+2. 數據集的處理   
+打開coco_annotation.py，裡面的參數默認用於處理shapes形狀數據集，直接運行可以在datasets/coco文件夾裡生成圖片文件和標籤文件，並且完成了訓練集和測試集的劃分。
 
-3. 开始网络训练   
-train.py的默认参数用于训练shapes数据集，默认指向了根目录下的数据集文件夹，直接运行train.py即可开始训练。   
+3. 開始網絡訓練   
+train.py的默認參數用於訓練shapes數據集，默認指向了根目錄下的數據集文件夾，直接運行train.py即可開始訓練。
 
-4. 训练结果预测   
-训练结果预测需要用到两个文件，分别是yolact.py和predict.py。
-首先需要去yolact.py里面修改model_path以及classes_path，这两个参数必须要修改。    
-**model_path指向训练好的权值文件，在logs文件夹里。   
-classes_path指向检测类别所对应的txt。**    
-完成修改后就可以运行predict.py进行检测了。运行后输入图片路径即可检测。   
+4. 訓練結果預測   
+訓練結果預測需要用到兩個文件，分別是yolact.py和predict.py。
+首先需要去yolact.py裡面修改model_path以及classes_path，這兩個參數必須要修改。
+**model_path指向訓練好的權值文件，在logs文件夾裡。
+classes_path指向檢測類別所對應的txt。 **    
+完成修改後就可以運行predict.py進行檢測了。運行後輸入圖片路徑即可檢測。
 
-### b、训练自己的数据集
-1. 数据集的准备  
-**本文使用labelme工具进行标注，标注好的文件有图片文件和json文件，二者均放在before文件夹里，具体格式可参考shapes数据集。**    
-在标注目标时需要注意，同一种类的不同目标需要使用 _ 来隔开。   
-比如想要训练网络检测**三角形和正方形**，当一幅图片存在两个三角形时，分别标记为：   
+### b、訓練自己的數據集
+1. 數據集的準備  
+**本文使用labelme工具進行標註，標註好的文件有圖片文件和json文件，二者均放在before文件夾裡，具體格式可參考shapes數據集。 **    
+在標註目標時需要注意，同一種類的不同目標需要使用 _ 來隔開。
+比如想要訓練網絡檢測**三角形和正方形**，當一幅圖片存在兩個三角形時，分別標記為：   
 ```python
 triangle_1
 triangle_2
 ```
-2. 数据集的处理  
-修改coco_annotation.py里面的参数。第一次训练可以仅修改classes_path，classes_path用于指向检测类别所对应的txt。    
-训练自己的数据集时，可以自己建立一个cls_classes.txt，里面写自己所需要区分的类别。    
-model_data/cls_classes.txt文件内容为：      
+2. 數據集的處理  
+修改coco_annotation.py裡面的參數。第一次訓練可以僅修改classes_path，classes_path用於指向檢測類別所對應的txt。
+訓練自己的數據集時，可以自己建立一個cls_classes.txt，裡面寫自己所需要區分的類別。
+model_data/cls_classes.txt文件內容為：      
 ```python
 cat
 dog
 ...
 ```  
-修改coco_annotation.py中的classes_path，使其对应cls_classes.txt，并运行coco_annotation.py。    
+修改coco_annotation.py中的classes_path，使其對應cls_classes.txt，並運行coco_annotation.py。
 
-3. 开始网络训练  
-**训练的参数较多，均在train.py中，大家可以在下载库后仔细看注释，其中最重要的部分依然是train.py里的classes_path。**   
-**classes_path用于指向检测类别所对应的txt，这个txt和coco_annotation.py里面的txt一样！训练自己的数据集必须要修改！**    
-修改完classes_path后就可以运行train.py开始训练了，在训练多个epoch后，权值会生成在logs文件夹中。   
+3. 開始網絡訓練  
+**訓練的參數較多，均在train.py中，大家可以在下載庫後仔細看註釋，其中最重要的部分依然是train.py裡的classes_path。 **   
+**classes_path用於指向檢測類別所對應的txt，這個txt和coco_annotation.py裡面的txt一樣！訓練自己的數據集必須要修改！ **    
+修改完classes_path後就可以運行train.py開始訓練了，在訓練多個epoch後，權值會生成在logs文件夾中。
 
-4. 训练结果预测  
-训练结果预测需要用到两个文件，分别是yolact.py和predict.py。
-首先需要去yolact.py里面修改model_path以及classes_path，这两个参数必须要修改。    
-**model_path指向训练好的权值文件，在logs文件夹里。   
-classes_path指向检测类别所对应的txt。**     
-完成修改后就可以运行predict.py进行检测了。运行后输入图片路径即可检测。     
+4. 訓練結果預測  
+訓練結果預測需要用到兩個文件，分別是yolact.py和predict.py。
+首先需要去yolact.py裡面修改model_path以及classes_path，這兩個參數必須要修改。
+**model_path指向訓練好的權值文件，在logs文件夾裡。
+classes_path指向檢測類別所對應的txt。 **     
+完成修改後就可以運行predict.py進行檢測了。運行後輸入圖片路徑即可檢測。
 
-### c、训练coco数据集
-1. 数据集的准备  
-coco训练集 http://images.cocodataset.org/zips/train2017.zip   
-coco验证集 http://images.cocodataset.org/zips/val2017.zip   
-coco训练集和验证集的标签 http://images.cocodataset.org/annotations/annotations_trainval2017.zip   
+### c、訓練coco數據集
+1. 數據集的準備  
+coco訓練集 http://images.cocodataset.org/zips/train2017.zip   
+coco驗證集 http://images.cocodataset.org/zips/val2017.zip   
+coco訓練集和驗證集的標籤 http://images.cocodataset.org/annotations/annotations_trainval2017.zip   
 
-2. 开始网络训练  
-解压训练集、验证集及其标签后。打开train.py文件，修改其中的classes_path指向model_data/coco_classes.txt。   
-修改train_image_path为训练图片的路径，train_annotation_path为训练图片的标签文件，val_image_path为验证图片的路径，val_annotation_path为验证图片的标签文件。   
+2. 開始網絡訓練  
+解壓訓練集、驗證集及其標籤後。打開train.py文件，修改其中的classes_path指向model_data/coco_classes.txt。
+修改train_image_path為訓練圖片的路徑，train_annotation_path為訓練圖片的標籤文件，val_image_path為驗證圖片的路徑，val_annotation_path為驗證圖片的標籤文件。
 
-3. 训练结果预测  
-训练结果预测需要用到两个文件，分别是yolact.py和predict.py。
-首先需要去yolact.py里面修改model_path以及classes_path，这两个参数必须要修改。    
-**model_path指向训练好的权值文件，在logs文件夹里。   
-classes_path指向检测类别所对应的txt。**    
-完成修改后就可以运行predict.py进行检测了。运行后输入图片路径即可检测。   
+3. 訓練結果預測  
+訓練結果預測需要用到兩個文件，分別是yolact.py和predict.py。
+首先需要去yolact.py裡面修改model_path以及classes_path，這兩個參數必須要修改。
+**model_path指向訓練好的權值文件，在logs文件夾裡。
+classes_path指向檢測類別所對應的txt。 **    
+完成修改後就可以運行predict.py進行檢測了。運行後輸入圖片路徑即可檢測。
 
-## 预测步骤
-### a、使用预训练权重
-1. 下载完库后解压，在百度网盘下载权值，放入model_data，运行predict.py，输入   
+## 預測步驟
+### a、使用預訓練權重
+1. 下載完庫後解壓，在百度網盤下載權值，放入model_data，運行predict.py，輸入   
 ```python
 img/street.jpg
 ```
-2. 在predict.py里面进行设置可以进行fps测试和video视频检测。   
-### b、使用自己训练的权重
-1. 按照训练步骤训练。    
-2. 在yolact.py文件里面，在如下部分修改model_path和classes_path使其对应训练好的文件；**model_path对应logs文件夹下面的权值文件，classes_path是model_path对应分的类**。   
+2. 在predict.py裡面進行設置可以進行fps測試和video視頻檢測。
+### b、使用自己訓練的權重
+1. 按照訓練步驟訓練。
+2. 在yolact.py文件裡面，在如下部分修改model_path和classes_path使其對應訓練好的文件；**model_path對應logs文件夾下面的權值文件，classes_path是model_path對應分的類**。
 ```python
 _defaults = {
     #--------------------------------------------------------------------------#
-    #   使用自己训练好的模型进行预测一定要修改model_path和classes_path！
-    #   model_path指向logs文件夹下的权值文件，classes_path指向model_data下的txt
+    #   使用自己訓練好的模型進行預測一定要修改model_path和classes_path！
+    #   model_path指向logs文件夾下的權值文件，classes_path指向model_data下的txt
     #
-    #   训练好后logs文件夹下存在多个权值文件，选择验证集损失较低的即可。
-    #   验证集损失较低不代表mAP较高，仅代表该权值在验证集上泛化性能较好。
-    #   如果出现shape不匹配，同时要注意训练时的model_path和classes_path参数的修改
+    #   訓練好後logs文件夾下存在多個權值文件，選擇驗證集損失較低的即可。
+    #   驗證集損失較低不代表mAP較高，僅代表該權值在驗證集上泛化性能較好。
+    #   如果出現shape不匹配，同時要注意訓練時的model_path和classes_path參數的修改
     #--------------------------------------------------------------------------#
     "model_path"        : 'model_data/yolact_weights_shape.pth',
     "classes_path"      : 'model_data/shape_classes.txt',
     #---------------------------------------------------------------------#
-    #   输入图片的大小
+    #   輸入圖片的大小
     #---------------------------------------------------------------------#
     "input_shape"       : [544, 544],
     #---------------------------------------------------------------------#
-    #   只有得分大于置信度的预测框会被保留下来
+    #   只有得分大於置信度的預測框會被保留下來
     #---------------------------------------------------------------------#
     "confidence"        : 0.5,
     #---------------------------------------------------------------------#
-    #   非极大抑制所用到的nms_iou大小
+    #   非極大抑制所用到的nms_iou大小
     #---------------------------------------------------------------------#
     "nms_iou"           : 0.3,
     #---------------------------------------------------------------------#
-    #   先验框的大小
+    #   先驗框的大小
     #---------------------------------------------------------------------#
     "anchors_size"      : [24, 48, 96, 192, 384],
     #---------------------------------------------------------------------#
-    #   传统非极大抑制
+    #   傳統非極大抑制
     #---------------------------------------------------------------------#
     "traditional_nms"   : True,
     #-------------------------------#
@@ -144,24 +144,25 @@ _defaults = {
     "cuda"              : True
 }
 ```
-3. 运行predict.py，输入    
+3. 運行predict.py，輸入    
 ```python
 img/street.jpg
 ```
-4. 在predict.py里面进行设置可以进行fps测试和video视频检测。    
+4. 在predict.py裡面進行設置可以進行fps測試和video視頻檢測。
 
-## 评估步骤 
-### a、评估自己的数据集
-1. 本文使用coco格式进行评估。    
-2. 如果在训练前已经运行过coco_annotation.py文件，代码会自动将数据集划分成训练集、验证集和测试集。
-3. 如果想要修改测试集的比例，可以修改coco_annotation.py文件下的trainval_percent。trainval_percent用于指定(训练集+验证集)与测试集的比例，默认情况下 (训练集+验证集):测试集 = 9:1。train_percent用于指定(训练集+验证集)中训练集与验证集的比例，默认情况下 训练集:验证集 = 9:1。
-4. 在yolact.py里面修改model_path以及classes_path。**model_path指向训练好的权值文件，在logs文件夹里。classes_path指向检测类别所对应的txt。**    
-5. 前往eval.py文件修改classes_path，classes_path用于指向检测类别所对应的txt，这个txt和训练时的txt一样。评估自己的数据集必须要修改。运行eval.py即可获得评估结果。  
+## 評估步驟 
+### a、評估自己的數據集
+1. 本文使用coco格式進行評估。
+2. 如果在訓練前已經運行過coco_annotation.py文件，代碼會自動將數據集劃分成訓練集、驗證集和測試集。
+3. 如果想要修改測試集的比例，可以修改coco_annotation.py文件下的trainval_percent。 trainval_percent用於指定(訓練集+驗證集)與測試集的比例，默認情況下 (訓練集+驗證集):測試集 = 9:1。 train_percent用於指定(訓練集+驗證集)中訓練集與驗證集的比例，默認情況下 訓練集:驗證集 = 9:1。
+4. 在yolact.py裡面修改model_path以及classes_path。 **model_path指向訓練好的權值文件，在logs文件夾裡。 classes_path指向檢測類別所對應的txt。 **    
+5. 前往eval.py文件修改classes_path，classes_path用於指向檢測類別所對應的txt，這個txt和訓練時的txt一樣。評估自己的數據集必須要修改。運行eval.py即可獲得評估結果。
 
-### b、评估coco的数据集
-1. 下载好coco数据集。  
-2. 在yolact.py里面修改model_path以及classes_path。**model_path指向coco数据集的权重，在logs文件夹里。classes_path指向model_data/coco_classes.txt。**    
-3. 前往eval.py设置classes_path，指向model_data/coco_classes.txt。修改Image_dir为评估图片的路径，Json_path为评估图片的标签文件。 运行eval.py即可获得评估结果。  
+### b、評估coco的數據集
+1. 下載好coco數據集。
+2. 在yolact.py裡面修改model_path以及classes_path。 **model_path指向coco數據集的權重，在logs文件夾裡。 classes_path指向model_data/coco_classes.txt。 **    
+3. 前往eval.py設置classes_path，指向model_data/coco_classes.txt。修改Image_dir為評估圖片的路徑，Json_path為評估圖片的標籤文件。運行eval.py即可獲得評估結果。
   
 ## Reference
 https://github.com/feiyuhuahuo/Yolact_minimal   
+https://github.com/PanJinquan/python-learning-notes
