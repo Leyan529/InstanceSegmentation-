@@ -164,5 +164,6 @@ img/street.jpg
 3. 前往eval.py設置classes_path，指向model_data/coco_classes.txt。修改Image_dir為評估圖片的路徑，Json_path為評估圖片的標籤文件。運行eval.py即可獲得評估結果。
   
 ## Reference
+https://github.com/bubbliiiing/yolact-pytorch
 https://github.com/feiyuhuahuo/Yolact_minimal   
 https://github.com/PanJinquan/python-learning-notes
