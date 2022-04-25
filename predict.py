@@ -1,173 +1,139 @@
-import bisect
-import glob
-import os
-import re
+#-------------------------------------#
+#       对单张图片进行预测
+#-------------------------------------#
 import time
 
-import torch
-
-from mask_rcnn.utils.utils_fit import train_one_epoch, eval_one_epoch
-from mask_rcnn.net import maskrcnn_resnet50
-from mask_rcnn.utils.utils import get_gpu_prop, save_ckpt
-
-import torch.nn.functional as F
 import cv2
 import numpy as np
+from PIL import Image
 
-import albumentations as argu
+from yolact import YOLACT
 
-def expand_detection(mask, box, padding):
-    M = mask.shape[-1]
-    scale = (M + 2 * padding) / M
-    padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
-    
-    w_half = (box[:, 2] - box[:, 0]) * 0.5
-    h_half = (box[:, 3] - box[:, 1]) * 0.5
-    x_c = (box[:, 2] + box[:, 0]) * 0.5
-    y_c = (box[:, 3] + box[:, 1]) * 0.5
-
-    w_half = w_half * scale
-    h_half = h_half * scale
-
-    box_exp = torch.zeros_like(box)
-    box_exp[:, 0] = x_c - w_half
-    box_exp[:, 2] = x_c + w_half
-    box_exp[:, 1] = y_c - h_half
-    box_exp[:, 3] = y_c + h_half
-    return padded_mask, box_exp.to(torch.int64)
-
-@torch.no_grad()
-def paste_masks_in_image(mask, box, padding, image_shape):
-    mask, box = expand_detection(mask, box, padding)
-    
-    N = mask.shape[0]
-    size = (N,) + tuple(image_shape)
-    im_mask = torch.zeros(size, dtype=mask.dtype, device=mask.device)
-    for m, b, im in zip(mask, box, im_mask):
-        b = b.tolist()
-        w = max(b[2] - b[0], 1)
-        h = max(b[3] - b[1], 1)
-        
-        m = F.interpolate(m[None, None], size=(h, w), mode='bilinear', align_corners=False)[0][0]
-
-        x1 = max(b[0], 0)
-        y1 = max(b[1], 0)
-        x2 = min(b[2], image_shape[1])
-        y2 = min(b[3], image_shape[0])
-
-        im[y1:y2, x1:x2] = m[(y1 - b[1]):(y2 - b[1]), (x1 - b[0]):(x2 - b[0])]
-    return im_mask    
-    
-def main(args):
-    device = torch.device("cuda" if torch.cuda.is_available() and args.use_cuda else "cpu")
-    if device.type == "cuda": 
-        get_gpu_prop(show=True)
-    print("\ndevice: {}".format(device))
-        
-    # ---------------------- prepare data loader ------------------------------- #
-
-       
-    num_classes = 90 +1
-    # -------------------------------------------------------------------------- #
-
-    print(args)
-    model = maskrcnn_resnet50(True, num_classes, predict = True).to(device)    
-    
-    # find all checkpoints, and load the latest checkpoint
-    prefix, ext = os.path.splitext(args.ckpt_path)
-    # ckpts = glob.glob(prefix + "-*" + ext)
-    ckpts = glob.glob(prefix + "*" + ext)
-    # ckpts.sort(key=lambda x: int(re.search(r"-(\d+){}".format(ext), os.path.split(x)[1]).group(1)))
-    if ckpts:
-        checkpoint = torch.load(ckpts[-1], map_location=device) # load last checkpoint
-        model.load_state_dict(checkpoint["model"])
-        del checkpoint
-        torch.cuda.empty_cache()
-
-    model.eval()
-    
-    # ------------------------------- train ------------------------------------ #
-    image_shape = (600, 600)
-
-    capture = cv2.VideoCapture("D:/WorkSpace/JupyterWorkSpace/DataSet/LANEdevkit/Drive-View-Kaohsiung-Taiwan.mp4")
-    ori_image_shape    = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-
-    while(True):    
-        ref, frame = capture.read()    
-        if not ref:
-            break
-        # 格式轉變，BGRtoRGB
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        frame = np.uint8(frame)
-
-        image_data = argu.functional.normalize(frame, mean = (0.485, 0.456, 0.406), 
-                                                      std = (0.229, 0.224, 0.225))       
-
-        image_data = cv2.resize(image_data, (image_shape[1], image_shape[0]))
-        images = np.expand_dims(np.transpose(np.array(image_data, dtype='float32'), (2, 0, 1)), 0)
-        images = torch.Tensor(images)
-
-        A = time.time()        
-        images = images.to(device)
-        output = model(images)
-        A = time.time() - A 
-
-        if output["labels"].shape[0] != 0:
-            box = output['boxes']
-            box[:, [0, 2]] = box[:, [0, 2]] * ori_image_shape[1] / image_shape[1]
-            box[:, [1, 3]] = box[:, [1, 3]] * ori_image_shape[0] / image_shape[0]
-            output['boxes'] = box            
-
-            mask = output['masks']
-            mask = paste_masks_in_image(mask, box, 1, ori_image_shape)
-            output['masks'] = mask
-
-            mask = mask.detach().cpu().numpy()  
-            mask = np.transpose(mask, (1, 2, 0))     
-            mask = np.uint8(mask)
-
-            box = box.detach().cpu().numpy()  
-            label = output["labels"].detach().cpu().numpy()
-            for idx, bb in enumerate(box):
-                x1, y1, x2, y2 = bb
-                frame = cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255,0,0), 2)
-                print("labels", (x1, y1, x2, y2), label[idx])
-
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        cv2.imshow("w", frame)
-        c= cv2.waitKey(1) & 0xff 
-        if c==27:
-            break     
-
-    
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--use-cuda", action="store_true", default=True)
-    
-    parser.add_argument("--dataset", default="coco", help="coco or voc")
-    parser.add_argument("--data-dir", default="D:\WorkSpace\JupyterWorkSpace\DataSet\COCO")
-    parser.add_argument("--ckpt-path", default="logs/maskrcnn_ep.pth")
-    parser.add_argument("--results")
-    
-    parser.add_argument("--seed", type=int, default=3)
-    parser.add_argument('--lr-steps', nargs="+", type=int, default=[6, 7])
-    parser.add_argument("--lr", type=float)
-    parser.add_argument("--momentum", type=float, default=0.9)
-    parser.add_argument("--weight-decay", type=float, default=0.0001)
-    
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--iters", type=int, default=10, help="max iters per epoch, -1 denotes auto")
-    parser.add_argument("--print-freq", type=int, default=100, help="frequency of printing losses")
-    args = parser.parse_args()
-    
-    if args.lr is None:
-        args.lr = 0.02 * 1 / 16 # lr should be 'batch_size / 16 * 0.02'
-    if args.ckpt_path is None:
-        args.ckpt_path = "./maskrcnn_{}.pth".format(args.dataset)
-    if args.results is None:
-        args.results = os.path.join(os.path.dirname(args.ckpt_path), "maskrcnn_results.pth")
-    
-    main(args)
-    
-    
+    classes_path    = 'model_data/coco_classes.txt'   
+    yolact = YOLACT(classes_path=classes_path)
+    #----------------------------------------------------------------------------------------------------------#
+    #   mode用于指定测试的模式：
+    #   'predict'表示单张图片预测，如果想对预测过程进行修改，如保存图片，截取对象等，可以先看下方详细的注释
+    #   'video'表示视频检测，可调用摄像头或者视频进行检测，详情查看下方注释。
+    #   'fps'表示测试fps，使用的图片是img里面的street.jpg，详情查看下方注释。
+    #   'dir_predict'表示遍历文件夹进行检测并保存。默认遍历img文件夹，保存img_out文件夹，详情查看下方注释。
+    #----------------------------------------------------------------------------------------------------------#
+    # mode = "predict"
+    mode = "video"
+    #----------------------------------------------------------------------------------------------------------#
+    #   video_path用于指定视频的路径，当video_path=0时表示检测摄像头
+    #   想要检测视频，则设置如video_path = "xxx.mp4"即可，代表读取出根目录下的xxx.mp4文件。
+    #   video_save_path表示视频保存的路径，当video_save_path=""时表示不保存
+    #   想要保存视频，则设置如video_save_path = "yyy.mp4"即可，代表保存为根目录下的yyy.mp4文件。
+    #   video_fps用于保存的视频的fps
+    #   video_path、video_save_path和video_fps仅在mode='video'时有效
+    #   保存视频时需要ctrl+c退出或者运行到最后一帧才会完成完整的保存步骤。
+    #----------------------------------------------------------------------------------------------------------#
+    video_path      = "D:/WorkSpace/JupyterWorkSpace/DataSet/LANEdevkit/Drive-View-Noon-Driving-Taipei-Taiwan.mp4"
+    video_save_path = "pred_out/coco.mp4"
+    video_fps       = 25.0
+    #-------------------------------------------------------------------------#
+    #   test_interval用于指定测量fps的时候，图片检测的次数
+    #   理论上test_interval越大，fps越准确。
+    #-------------------------------------------------------------------------#
+    test_interval = 100
+    #-------------------------------------------------------------------------#
+    #   dir_origin_path指定了用于检测的图片的文件夹路径
+    #   dir_save_path指定了检测完图片的保存路径
+    #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
+    #-------------------------------------------------------------------------#
+    dir_origin_path = "img/"
+    dir_save_path   = "img_out/"
+
+    if mode == "predict":
+        '''
+        1、该代码无法直接进行批量预测，如果想要批量预测，可以利用os.listdir()遍历文件夹，利用Image.open打开图片文件进行预测。
+        具体流程可以参考get_dr_txt.py，在get_dr_txt.py即实现了遍历还实现了目标信息的保存。
+        2、如果想要进行检测完的图片的保存，利用r_image.save("img.jpg")即可保存，直接在predict.py里进行修改即可。 
+        3、如果想要获得预测框的坐标，可以进入yolact.detect_image函数，在绘图部分读取top，left，bottom，right这四个值。
+        4、如果想要利用预测框截取下目标，可以进入yolact.detect_image函数，在绘图部分利用获取到的top，left，bottom，right这四个值
+        在原图上利用矩阵的方式进行截取。
+        5、如果想要在预测图上写额外的字，比如检测到的特定目标的数量，可以进入yolact.detect_image函数，在绘图部分对predicted_class进行判断，
+        比如判断if predicted_class == 'car': 即可判断当前目标是否为车，然后记录数量即可。利用draw.text即可写字。
+        '''
+        while True:
+            img = input('Input image filename:')
+            try:
+                image = Image.open(img)
+            except:
+                print('Open Error! Try again!')
+                continue
+            else:
+                r_image = yolact.detect_image(image)
+                r_image.show()
+
+    elif mode == "video":
+        capture=cv2.VideoCapture(video_path)
+        if video_save_path!="":
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            size = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+            out = cv2.VideoWriter(video_save_path, fourcc, video_fps, size)
+
+        ref, frame = capture.read()
+        if not ref:
+            raise ValueError("未能正确读取摄像头（视频），请注意是否正确安装摄像头（是否正确填写视频路径）。")
+
+        fps = 0.0
+        while(True):
+            t1 = time.time()
+            # 读取某一帧
+            ref, frame = capture.read()
+            if not ref:
+                break
+            # 格式转变，BGRtoRGB
+            frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+            # 转变成Image
+            frame = Image.fromarray(np.uint8(frame))
+            # 进行检测
+            frame = np.array(yolact.detect_image(frame))
+            # RGBtoBGR满足opencv显示格式
+            frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
+            
+            fps  = ( fps + (1./(time.time()-t1)) ) / 2
+            print("fps= %.2f"%(fps))
+            frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            
+            cv2.imshow("video",frame)
+            c= cv2.waitKey(1) & 0xff 
+            if video_save_path!="":
+                out.write(frame)
+
+            if c==27:
+                capture.release()
+                break
+
+        print("Video Detection Done!")
+        capture.release()
+        if video_save_path!="":
+            print("Save processed video to the path :" + video_save_path)
+            out.release()
+        cv2.destroyAllWindows()
+
+    elif mode == "fps":
+        img = Image.open('img/street.jpg')
+        tact_time = yolact.get_FPS(img, test_interval)
+        print(str(tact_time) + ' seconds, ' + str(1/tact_time) + 'FPS, @batch_size 1')
+
+    elif mode == "dir_predict":
+        import os
+
+        from tqdm import tqdm
+
+        img_names = os.listdir(dir_origin_path)
+        for img_name in tqdm(img_names):
+            if img_name.lower().endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff')):
+                image_path  = os.path.join(dir_origin_path, img_name)
+                image       = Image.open(image_path)
+                r_image     = yolact.detect_image(image)
+                if not os.path.exists(dir_save_path):
+                    os.makedirs(dir_save_path)
+                r_image.save(os.path.join(dir_save_path, img_name))
+                
+    else:
+        raise AssertionError("Please specify the correct mode: 'predict', 'video', 'fps' or 'dir_predict'.")

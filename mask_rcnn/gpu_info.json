@@ -1,1 +1,0 @@
-{"NVIDIA GeForce RTX 3060": {"performance": {"1": {"maskrcnn": [[0.31, 0.32], [0.31, 0.74], [0.3, 0.71], [0.29, 0.68], [0.18, 1.12]]}}, "properties": {"capability": [8, 6], "name": "NVIDIA GeForce RTX 3060", "sm_count": 28, "total_momory": 12.0}}}
