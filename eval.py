@@ -5,8 +5,8 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from tqdm import tqdm
 
-from utils.utils import get_classes, get_coco_label_map
-from utils.utils_map import Make_json, prep_metrics
+from inst_model.yolact.utils.utils import get_classes, get_coco_label_map
+from inst_model.yolact.utils.utils_map import Make_json, prep_metrics
 from yolact import YOLACT
 
 if __name__ == '__main__':

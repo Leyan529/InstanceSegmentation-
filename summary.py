@@ -3,7 +3,7 @@
 #--------------------------------------------#
 import torch
 from torchsummary import summary
-from nets.yolact import Yolact
+from inst_model.yolact.nets.yolact import Yolact
 
 if __name__ == "__main__":
     # 需要使用device来指定网络在GPU还是CPU运行

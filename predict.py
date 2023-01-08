@@ -7,11 +7,13 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from yolact import YOLACT
+from inst_model.yolact.yolact import YOLACT
+from utils.helpers import get_classes
 
 if __name__ == "__main__":
-    classes_path    = 'model_data/coco_classes.txt'   
-    yolact = YOLACT(classes_path=classes_path)
+    classes_path    = 'model_data/voc_classes.txt' 
+    class_names, num_classes = get_classes(classes_path)  
+    yolact = YOLACT(classes_path=classes_path, num_classes=num_classes)
     #----------------------------------------------------------------------------------------------------------#
     #   mode用于指定测试的模式：
     #   'predict'表示单张图片预测，如果想对预测过程进行修改，如保存图片，截取对象等，可以先看下方详细的注释
@@ -46,6 +48,24 @@ if __name__ == "__main__":
     dir_origin_path = "img/"
     dir_save_path   = "img_out/"
 
+    test_interval   = 100
+    fps_image_path  = "img/street.jpg"
+    #-------------------------------------------------------------------------#
+    #   dir_origin_path     指定了用于检测的图片的文件夹路径
+    #   dir_save_path       指定了检测完图片的保存路径
+    #   
+    #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
+    #-------------------------------------------------------------------------#
+    dir_origin_path = "img/"
+    dir_save_path   = "img_out/"
+    #-------------------------------------------------------------------------#
+    #   simplify            使用Simplify onnx
+    #   onnx_save_path      指定了onnx的保存路径
+    #-------------------------------------------------------------------------#
+    simplify        = True
+    onnx_save_path  = "model_data/models.onnx"
+
+    
     if mode == "predict":
         '''
         1、该代码无法直接进行批量预测，如果想要批量预测，可以利用os.listdir()遍历文件夹，利用Image.open打开图片文件进行预测。
@@ -116,7 +136,7 @@ if __name__ == "__main__":
         cv2.destroyAllWindows()
 
     elif mode == "fps":
-        img = Image.open('img/street.jpg')
+        img = Image.open(fps_image_path)
         tact_time = yolact.get_FPS(img, test_interval)
         print(str(tact_time) + ' seconds, ' + str(1/tact_time) + 'FPS, @batch_size 1')
 
@@ -133,7 +153,10 @@ if __name__ == "__main__":
                 r_image     = yolact.detect_image(image)
                 if not os.path.exists(dir_save_path):
                     os.makedirs(dir_save_path)
-                r_image.save(os.path.join(dir_save_path, img_name))
-                
+                r_image.save(os.path.join(dir_save_path, img_name.replace(".jpg", ".png")), quality=95, subsampling=0)
+        
+    elif mode == "export_onnx":
+        yolact.convert_to_onnx(simplify, onnx_save_path)
+        
     else:
         raise AssertionError("Please specify the correct mode: 'predict', 'video', 'fps' or 'dir_predict'.")
