@@ -30,13 +30,13 @@ def get_annotation(data_root, classes_path):
     #---------------------------#
     #   读取数据集对应的txt
     #---------------------------#
-    VOCdevkit_path  = os.path.join(data_root, "VOCdevkit")
+    VOCdevkit_path  = os.path.join(data_root, "VERSEG")
 
-    train_image_path        = os.path.join(VOCdevkit_path, "VOC2007\JPEGImages")
-    val_image_path          = os.path.join(VOCdevkit_path,"VOC2012\JPEGImages")
+    train_image_path        = os.path.join(VOCdevkit_path, "Train")
+    val_image_path          = os.path.join(VOCdevkit_path,"Validation")
 
-    train_coco  = COCO(os.path.join(VOCdevkit_path, "VOC2007\Annotations\VOC2007.json"))
-    val_coco    = COCO(os.path.join(VOCdevkit_path, "VOC2012\Annotations\VOC2012.json")) 
+    train_coco  = COCO(os.path.join(VOCdevkit_path, "Train/annotations.json"))
+    val_coco    = COCO(os.path.join(VOCdevkit_path, "Validation/annotations.json"))     
 
     COCO_LABEL_MAP  = get_coco_label_map(train_coco, class_names)
     return train_image_path, val_image_path, train_coco, val_coco, \

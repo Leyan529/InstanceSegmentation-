@@ -14,13 +14,13 @@ def get_opts(Train=True):
     opt = argparse.Namespace()  
 
     #the train data, you need change.
-    # opt.data_root = '/home/leyan/DataSet/'
+    opt.data_root = '/home/leyan/DataSet/'
     # opt.data_root = "/home/zimdytsai/leyan/DataSet"
-    opt.data_root = 'D://WorkSpace//JupyterWorkSpace//DataSet//'
+    # opt.data_root = 'D://WorkSpace//JupyterWorkSpace//DataSet//'
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'voc'
+    opt.exp_name = 'verseg'
     """
     [ voc ]
     """
@@ -36,9 +36,9 @@ def get_opts(Train=True):
     #                   x : 对应yolov7_x
     #############################################################################################    
     opt.net = 'yolact'     # [yolact]
-    opt.model_path      = 'model_data/weight/yolact_weights_coco.pth' 
+    opt.model_path      = '' 
     opt.input_shape     = [544, 544]  
-    opt.pretrained      = True
+    opt.pretrained      = False
     opt.IM_SHAPE = (opt.input_shape[0], opt.input_shape[1], 3)
     #------------------------------------------------------#
     #   获取先验框大小
@@ -59,14 +59,9 @@ def get_opts(Train=True):
     opt.anchors     = torch.from_numpy(opt.anchors).type(torch.FloatTensor)
     #---------------------------#
     #   讀取數據集對應的txt
-    #---------------------------#
-    with open(os.path.join(opt.data_path, "Segmentation//train.txt"),"r") as f:
-        opt.train_lines = f.readlines()
-
-    with open(os.path.join(opt.data_path, "Segmentation//val.txt"),"r") as f:
-        opt.val_lines = f.readlines()
-    opt.num_train   = len(opt.train_lines)
-    opt.num_val     = len(opt.val_lines) 
+    #---------------------------# 
+    opt.num_train   = len(list(opt.train_coco.imgToAnns.keys()))
+    opt.num_val     = len(list(opt.val_coco.imgToAnns.keys())) 
     #------------------------------------------------------------------#
     opt.Cosine_lr           = False
     opt.label_smoothing     = 0

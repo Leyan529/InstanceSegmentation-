@@ -25,7 +25,7 @@ def weights_init(net, init_type='normal', init_gain = 0.02):
     # print('initialize network with %s type' % init_type)
     net.apply(init_func)
 
-def get_model(opt, train_mode=False):  
+def get_model(opt, train_mode=True):  
     model = init_dt_model(opt, train_mode)
     criterion = init_loss(opt)   
     return model, criterion
