@@ -1,7 +1,7 @@
-# ImageSegmentation
-My Frame work for SemanticSegmentation
+# InstanceSegmentation
+My Frame work for InstanceSegmentation
 ## Overview
-I organizize the object detection algorithms proposed in recent years, and focused on **`Cityscapes`, `COCO` , `lane` and `Pascal VOC` Dataset.**
+I organizize the Instance Segmentation algorithms proposed in recent years, and focused on **`Pascal VOC`, `VerSeg vertebra` Dataset.**
 This frame work also include **`EarlyStopping mechanism`**.
 
 
