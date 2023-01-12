@@ -6,15 +6,17 @@ import torch.backends.cudnn as cudnn
 import logging
 import importlib
 from trainer import Trainer
+import warnings
+warnings.filterwarnings("ignore", category=Warning)
 
-
-# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
 def main():    
     # Load options
     parser = argparse.ArgumentParser(description='Attribute Learner')
-    parser.add_argument('--config', type=str, default="configs.yolact_base" 
+    # parser.add_argument('--config', type=str, default="configs.yolact_base" 
+    parser.add_argument('--config', type=str, default="configs.mask_rcnn" 
                         ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
     parser.add_argument("--local_rank", type=int, help="local_rank")    
     parser.add_argument("--resume", type=bool, default=False , help="local_rank")  

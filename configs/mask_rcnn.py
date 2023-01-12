@@ -35,7 +35,7 @@ def get_opts(Train=True):
     #                   l : 对应yolov7
     #                   x : 对应yolov7_x
     #############################################################################################    
-    opt.net = 'yolact'     # [yolact, Mask_RCNN]
+    opt.net = 'Mask_RCNN'     # [yolact]
     opt.model_path      = '' 
     opt.input_shape     = [544, 544]  
     opt.pretrained      = True

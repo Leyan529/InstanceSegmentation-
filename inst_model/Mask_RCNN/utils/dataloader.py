@@ -5,9 +5,9 @@ import torch
 import torch.utils.data as data
 from PIL import Image
 
-from inst_model.yolact.utils.utils import cvtColor, preprocess_input
+from inst_model.Mask_RCNN.utils.utils import cvtColor, preprocess_input
 
-class yolactDataset(data.Dataset):
+class MaskDataset(data.Dataset):
     def __init__(self, image_path, coco, COCO_LABEL_MAP={}, augmentation=None):
         self.image_path     = image_path
 
@@ -18,6 +18,9 @@ class yolactDataset(data.Dataset):
         
         self.label_map      = COCO_LABEL_MAP
         self.length         = len(self.ids)
+
+        self._classes = {k: v["name"] for k, v in self.coco.cats.items()}
+        self.classes = tuple(self.coco.cats[k]["name"] for k in sorted(self.coco.cats))
 
     def __getitem__(self, index):
         return self.pull_item(index)
@@ -59,8 +62,8 @@ class yolactDataset(data.Dataset):
             boxes_classes = []
             for obj in target:
                 bbox        = obj['bbox']
-                name        = obj["category_id"]  
-                final_box   = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3], self.label_map[obj['category_id']] - 1]
+                name        = self._classes[obj["category_id"]] 
+                final_box   = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3], self.classes.index(name)]
                 boxes_classes.append(final_box)
             boxes_classes = np.array(boxes_classes, np.float32)
             boxes_classes[:, [0, 2]] /= width
@@ -73,20 +76,21 @@ class yolactDataset(data.Dataset):
                 labels      = labels['labels']
                 boxes       = np.concatenate([boxes, np.expand_dims(labels, axis=1)], -1)
         image = preprocess_input(image)
-        labels = boxes[:, -1]
-        
-        return np.transpose(image, [2, 0, 1]), boxes, masks, num_crowds, 
+        image = np.transpose(image, [2, 0, 1])
+        image = torch.from_numpy(np.array(image, np.float32))
 
-def yolact_dataset_collate(batch):
+        labels = boxes[:, -1]        
+
+        target = dict(image_id=torch.tensor([image_id], dtype=torch.int64), 
+                      boxes=torch.tensor(boxes[:, :-1], dtype=torch.float32), 
+                      labels=torch.tensor(boxes[:, -1], dtype=torch.int64), 
+                      masks=torch.tensor(masks, dtype=torch.uint8))
+        return image, target 
+
+def mask_dataset_collate(batch):
     images      = []
     targets     = []
-    masks       = []
-    num_crowds  = []
-
     for sample in batch:
         images.append(sample[0])
-        targets.append(torch.from_numpy(sample[1]))
-        masks.append(torch.from_numpy(sample[2]))
-        num_crowds.append(sample[3])
-
-    return torch.from_numpy(np.array(images, np.float32)), targets, masks, num_crowds
+        targets.append(sample[1])
+    return images, targets

@@ -34,13 +34,18 @@ def init_dt_model(opt, train_mode=True):
     if opt.net == 'yolact':
         from inst_model.yolact.nets.yolact import Yolact
         model = Yolact(num_classes=opt.num_classes, pretrained=opt.pretrained, train_mode=train_mode)
-    
+    elif opt.net == 'Mask_RCNN':
+        from inst_model.Mask_RCNN.net.Engine import ResBackbone, MaskRCNN  
+        backbone = ResBackbone('resnet50')
+        model = MaskRCNN(backbone, opt.num_classes, use_pre_trained=opt.pretrained, train_mode=train_mode)    
     return model      
 
 def init_loss(opt):
     if opt.net == 'yolact':
         from inst_model.yolact.nets.yolact_training import Multi_Loss
-        criterion       = Multi_Loss(opt.num_classes, opt.anchors, 0.5, 0.4, 3)    
+        criterion       = Multi_Loss(opt.num_classes, opt.anchors, 0.5, 0.4, 3)  
+    else:
+        criterion = None
     return criterion 
 
 def get_optimizer(model, opt, optimizer_type):    
@@ -58,6 +63,13 @@ def generate_loader(opt):
         train_dataset   = yolactDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
         val_dataset     = yolactDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
         dataset_collate = yolact_dataset_collate 
+
+    elif opt.net == 'Mask_RCNN':
+        from inst_model.Mask_RCNN.utils.dataloader import MaskDataset, mask_dataset_collate        
+        train_dataset   = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+        val_dataset     = MaskDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+        # val_dataset     = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+        dataset_collate = mask_dataset_collate 
     
 
     batch_size      = opt.batch_size

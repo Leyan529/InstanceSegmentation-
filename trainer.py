@@ -40,17 +40,20 @@ class Trainer:
             local_rank      = 0
             rank            = 0
 
-        model, self.criterion  = models.get_model(opt)     
-        # ------------------------------------------------------------------------------- 
+        model, self.criterion  = models.get_model(opt, train_mode = False)  
+        # -------------------------------------------------------------------------------  
         if local_rank == 0:           
-            IM_SHAPE = (opt.batch_size, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1])
+            IM_SHAPE = (1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1])
             rndm_input = torch.autograd.Variable(
                 torch.rand(1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1]), 
-                requires_grad = False).cpu()
-            opt.writer.add_graph(model, rndm_input)         
+                requires_grad = False).cpu()            
+
+            # if opt.net != "Mask_RCNN":
+            #     opt.writer.add_graph(model, rndm_input)   # error with mask rcnn      
 
             write_info(opt.out_path, model, IM_SHAPE, "model.txt")  
         # ------------------------------------------------------------------------------
+        model, _  = models.get_model(opt)  
         # ------------------------------------------------------------------------------
         if opt.model_path != '':
             #------------------------------------------------------#
@@ -63,10 +66,10 @@ class Trainer:
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
             model_dict.update(pretrained_dict)
             model.load_state_dict(model_dict)
-        if opt.resume:
-            if local_rank == 0: 
-                model.load_state_dict(torch.load(os.path.join(opt.out_path, "last_epoch_weights.pth"), map_location = device))
-                print("Load resume model")
+        # if opt.resume:
+        #     if local_rank == 0: 
+        #         model.load_state_dict(torch.load(os.path.join(opt.out_path, "last_epoch_weights.pth"), map_location = device))
+        #         print("Load resume model")
         # ------------------------------------------------------------------------------
         # model.train()  
 
@@ -95,7 +98,7 @@ class Trainer:
         
         self.epoch = 0
         self.best_epoch = False
-        self.training = False
+        # self.training = False
         self.state = {}
 
         self.loss_history = LossHistory(opt)
