@@ -2,93 +2,56 @@
 #       对单张图片进行预测
 #-------------------------------------#
 import time
+import argparse, os
 
 import cv2
 import numpy as np
 from PIL import Image
 
-from inst_model.yolact.yolact import YOLACT
-from utils.helpers import get_classes
+import importlib
 
 if __name__ == "__main__":
-    classes_path    = 'model_data/voc_classes.txt' 
-    class_names, num_classes = get_classes(classes_path)  
-    yolact = YOLACT(classes_path=classes_path, num_classes=num_classes)
-    #----------------------------------------------------------------------------------------------------------#
-    #   mode用于指定测试的模式：
-    #   'predict'表示单张图片预测，如果想对预测过程进行修改，如保存图片，截取对象等，可以先看下方详细的注释
-    #   'video'表示视频检测，可调用摄像头或者视频进行检测，详情查看下方注释。
-    #   'fps'表示测试fps，使用的图片是img里面的street.jpg，详情查看下方注释。
-    #   'dir_predict'表示遍历文件夹进行检测并保存。默认遍历img文件夹，保存img_out文件夹，详情查看下方注释。
-    #----------------------------------------------------------------------------------------------------------#
-    # mode = "predict"
-    mode = "video"
-    #----------------------------------------------------------------------------------------------------------#
-    #   video_path用于指定视频的路径，当video_path=0时表示检测摄像头
-    #   想要检测视频，则设置如video_path = "xxx.mp4"即可，代表读取出根目录下的xxx.mp4文件。
-    #   video_save_path表示视频保存的路径，当video_save_path=""时表示不保存
-    #   想要保存视频，则设置如video_save_path = "yyy.mp4"即可，代表保存为根目录下的yyy.mp4文件。
-    #   video_fps用于保存的视频的fps
-    #   video_path、video_save_path和video_fps仅在mode='video'时有效
-    #   保存视频时需要ctrl+c退出或者运行到最后一帧才会完成完整的保存步骤。
-    #----------------------------------------------------------------------------------------------------------#
-    video_path      = "D:/WorkSpace/JupyterWorkSpace/DataSet/LANEdevkit/Drive-View-Noon-Driving-Taipei-Taiwan.mp4"
-    video_save_path = "pred_out/coco.mp4"
-    video_fps       = 25.0
-    #-------------------------------------------------------------------------#
-    #   test_interval用于指定测量fps的时候，图片检测的次数
-    #   理论上test_interval越大，fps越准确。
-    #-------------------------------------------------------------------------#
-    test_interval = 100
-    #-------------------------------------------------------------------------#
-    #   dir_origin_path指定了用于检测的图片的文件夹路径
-    #   dir_save_path指定了检测完图片的保存路径
-    #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
-    #-------------------------------------------------------------------------#
-    dir_origin_path = "img/"
-    dir_save_path   = "img_out/"
+    parser = argparse.ArgumentParser(description='Attribute Learner')
+    parser.add_argument('--config', type=str, default="configs.yolact_base" 
+    # parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
+                        ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
+    parser.add_argument("--mode", type=str, default="video" , help="predict or video")  
+    parser.add_argument("--video_fps", type=float, default=25.0, help="video_fps")  
+    parser.add_argument("--test_interval", type=int, default=100, help="test_interval") 
 
-    test_interval   = 100
-    fps_image_path  = "img/street.jpg"
-    #-------------------------------------------------------------------------#
-    #   dir_origin_path     指定了用于检测的图片的文件夹路径
-    #   dir_save_path       指定了检测完图片的保存路径
-    #   
-    #   dir_origin_path和dir_save_path仅在mode='dir_predict'时有效
-    #-------------------------------------------------------------------------#
-    dir_origin_path = "img/"
-    dir_save_path   = "img_out/"
-    #-------------------------------------------------------------------------#
-    #   simplify            使用Simplify onnx
-    #   onnx_save_path      指定了onnx的保存路径
-    #-------------------------------------------------------------------------#
-    simplify        = True
-    onnx_save_path  = "model_data/models.onnx"
+    parser.add_argument("--video_path", type=str, 
+                                        default="/home/leyan/DataSet/LANEdevkit/Drive-View-Noon-Driving-Taipei-Taiwan.mp4", 
+                                        )  
+    parser.add_argument("--video_save_path", type=str, 
+                                        default="pred_out/coco.mp4", 
+                                        ) 
+    parser.add_argument("--dir_origin_path", type=str, 
+                                        default="img/", 
+                                        )  
+    parser.add_argument("--dir_save_path", type=str, 
+                                        default="img_out/", 
+                                        )  
 
+    conf = parser.parse_args() 
+    opt = importlib.import_module(conf.config).get_opts(Train=False)
+    for key, value in vars(conf).items():     
+        setattr(opt, key, value)
     
-    if mode == "predict":
-        '''
-        1、该代码无法直接进行批量预测，如果想要批量预测，可以利用os.listdir()遍历文件夹，利用Image.open打开图片文件进行预测。
-        具体流程可以参考get_dr_txt.py，在get_dr_txt.py即实现了遍历还实现了目标信息的保存。
-        2、如果想要进行检测完的图片的保存，利用r_image.save("img.jpg")即可保存，直接在predict.py里进行修改即可。 
-        3、如果想要获得预测框的坐标，可以进入yolact.detect_image函数，在绘图部分读取top，left，bottom，right这四个值。
-        4、如果想要利用预测框截取下目标，可以进入yolact.detect_image函数，在绘图部分利用获取到的top，left，bottom，right这四个值
-        在原图上利用矩阵的方式进行截取。
-        5、如果想要在预测图上写额外的字，比如检测到的特定目标的数量，可以进入yolact.detect_image函数，在绘图部分对predicted_class进行判断，
-        比如判断if predicted_class == 'car': 即可判断当前目标是否为车，然后记录数量即可。利用draw.text即可写字。
-        '''
-        while True:
-            img = input('Input image filename:')
-            try:
-                image = Image.open(img)
-            except:
-                print('Open Error! Try again!')
-                continue
-            else:
-                r_image = yolact.detect_image(image)
-                r_image.show()
+    d=vars(opt)
 
-    elif mode == "video":
+    model = opt.Model_Pred(classes_path=opt.classes_path, num_classes=opt.num_classes)   
+    mode = opt.mode
+    #----------------------------------------------------------------------------------------------------------#
+    video_path      = opt.video_path
+    video_save_path = opt.video_save_path
+    video_fps       = opt.video_fps
+    test_interval = opt.test_interval
+    #----------------------------------------------------------------------------------------------------------#
+    dir_origin_path = opt.dir_origin_path
+    dir_save_path   = opt.dir_save_path
+    fps_image_path  = "img/fps.jpg"
+    #-------------------------------------------------------------------------#
+    if mode == "video":
         capture=cv2.VideoCapture(video_path)
         if video_save_path!="":
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -111,7 +74,7 @@ if __name__ == "__main__":
             # 转变成Image
             frame = Image.fromarray(np.uint8(frame))
             # 进行检测
-            frame = np.array(yolact.detect_image(frame))
+            frame = np.array(model.detect_image(frame))
             # RGBtoBGR满足opencv显示格式
             frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
             
@@ -137,7 +100,7 @@ if __name__ == "__main__":
 
     elif mode == "fps":
         img = Image.open(fps_image_path)
-        tact_time = yolact.get_FPS(img, test_interval)
+        tact_time = model.get_FPS(img, test_interval)
         print(str(tact_time) + ' seconds, ' + str(1/tact_time) + 'FPS, @batch_size 1')
 
     elif mode == "dir_predict":
@@ -150,13 +113,11 @@ if __name__ == "__main__":
             if img_name.lower().endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff')):
                 image_path  = os.path.join(dir_origin_path, img_name)
                 image       = Image.open(image_path)
-                r_image     = yolact.detect_image(image)
+                r_image     = model.detect_image(image)
                 if not os.path.exists(dir_save_path):
                     os.makedirs(dir_save_path)
                 r_image.save(os.path.join(dir_save_path, img_name.replace(".jpg", ".png")), quality=95, subsampling=0)
         
-    elif mode == "export_onnx":
-        yolact.convert_to_onnx(simplify, onnx_save_path)
-        
+    
     else:
         raise AssertionError("Please specify the correct mode: 'predict', 'video', 'fps' or 'dir_predict'.")

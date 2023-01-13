@@ -20,12 +20,11 @@ def get_opts(Train=True):
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'voc'
+    opt.exp_name = 'verseg'
     """
-    [ voc, verseg ]
+    [ voc ]
     """
-    # get annotation file in current seting
-    
+    # get annotation file in current seting    
 
     opt.data_path, opt.classes_path = get_data(opt.data_root, opt.exp_name)
     # importlib.import_module("annotation.{}".format(opt.exp_name)).get_annotation(opt.data_root, opt.classes_path) 
@@ -34,10 +33,10 @@ def get_opts(Train=True):
     #                   l : 对应yolov7
     #                   x : 对应yolov7_x
     #############################################################################################    
-    opt.net = 'yolact'     # [yolact, Mask_RCNN]
-    opt.model_path      = 'model_data/weight/yolact_weights_coco.pth' 
+    opt.net = 'Mask_RCNN'     # [yolact]
+    opt.model_path      = '' 
     opt.input_shape     = [544, 544]  
-    opt.pretrained      = False
+    opt.pretrained      = True
     opt.IM_SHAPE = (opt.input_shape[0], opt.input_shape[1], 3)
     #------------------------------------------------------#
     #   获取先验框大小
@@ -174,9 +173,10 @@ def get_opts(Train=True):
     if Train:
         opt.writer = SummaryWriter(log_dir=os.path.join(opt.out_path, "tensorboard"))
         init_logging(opt.local_rank, opt.out_path)    
+ 
     else:
-        from inst_model.yolact.yolact import YOLACT
-        opt.Model_Pred = YOLACT
+        from inst_model.Mask_RCNN.mask_rcnn import Mask_RCNN
+        opt.Model_Pred = Mask_RCNN
  
     return opt
 
