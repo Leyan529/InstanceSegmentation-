@@ -38,6 +38,7 @@ def init_dt_model(opt, train_mode=True):
         from inst_model.Mask_RCNN.net.Engine import ResBackbone, MaskRCNN  
         backbone = ResBackbone('resnet50')
         model = MaskRCNN(backbone, opt.num_classes, use_pre_trained=opt.pretrained, train_mode=train_mode)    
+    if not train_mode: return model.eval()
     return model      
 
 def init_loss(opt):
