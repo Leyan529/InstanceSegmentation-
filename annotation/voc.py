@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+sys.path.append(".")
 import os
 import random
 from pycocotools.coco import COCO
@@ -32,11 +35,11 @@ def get_annotation(data_root, classes_path):
     #---------------------------#
     VOCdevkit_path  = os.path.join(data_root, "VOCdevkit")
 
-    train_image_path        = os.path.join(VOCdevkit_path, "VOC2007\JPEGImages")
-    val_image_path          = os.path.join(VOCdevkit_path,"VOC2012\JPEGImages")
+    train_image_path        = os.path.join(VOCdevkit_path, "VOC2007/JPEGImages")
+    val_image_path          = os.path.join(VOCdevkit_path,"VOC2012/JPEGImages")
 
-    train_coco  = COCO(os.path.join(VOCdevkit_path, "VOC2007\Annotations\VOC2007.json"))
-    val_coco    = COCO(os.path.join(VOCdevkit_path, "VOC2012\Annotations\VOC2012.json")) 
+    train_coco  = COCO(os.path.join(VOCdevkit_path, "VOC2007/Annotations/VOC2007.json"))
+    val_coco    = COCO(os.path.join(VOCdevkit_path, "VOC2012/Annotations/VOC2012.json")) 
 
     COCO_LABEL_MAP  = get_coco_label_map(train_coco, class_names)
     return train_image_path, val_image_path, train_coco, val_coco, \
