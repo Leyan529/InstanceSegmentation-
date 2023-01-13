@@ -118,15 +118,21 @@ def convert_xmls_to_cocojson(annotation_paths: List[str],
 
 
 def main():
+    # python voc2coco.py \
+    #     --ann_dir Annotations \
+    #     --ann_ids annpaths_list.txt \
+    #     --labels labels.txt \
+    #     --output out.json
+
     parser = argparse.ArgumentParser(
         description='This script support converting voc format xmls to coco format json')
-    parser.add_argument('--ann_dir', type=str, default=None,
+    parser.add_argument('--ann_dir', type=str, default="Annotations",
                         help='path to annotation files directory. It is not need when use --ann_paths_list')
-    parser.add_argument('--ann_ids', type=str, default=None,
+    parser.add_argument('--ann_ids', type=str, default="img_list.txt",
                         help='path to annotation files ids list. It is not need when use --ann_paths_list')
-    parser.add_argument('--ann_paths_list', type=str, default=None,
+    parser.add_argument('--ann_paths_list', type=str, default="annpaths_list.txt",
                         help='path of annotation paths list. It is not need when use --ann_dir and --ann_ids')
-    parser.add_argument('--labels', type=str, default=None,
+    parser.add_argument('--labels', type=str, default="labels.txt",
                         help='path to label list.')
     parser.add_argument('--output', type=str, default='output.json', help='path to output json file')
     parser.add_argument('--ext', type=str, default='', help='additional extension of annotation file')
