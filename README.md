@@ -116,6 +116,8 @@ python predict.py
 ```python
 python export.py --config "configs.yolact_base"
 ```
+## Demo
+![40c](https://user-images.githubusercontent.com/24097516/213660067-c9d14c5d-9aa2-4974-9b12-eb7b2ca99102.png)
 
 ## Reference
 - https://github.com/bubbliiiing/yolact-pytorch
