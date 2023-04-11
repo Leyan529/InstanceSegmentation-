@@ -122,3 +122,4 @@ python export.py --config "configs.yolact_base"
 ## Reference
 - https://github.com/bubbliiiing/yolact-pytorch
 - https://github.com/TWokulski/VerSeg
+- https://github.com/RookieQTZ/mask-rcnn-pytorch
