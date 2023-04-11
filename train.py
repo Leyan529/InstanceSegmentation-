@@ -16,7 +16,7 @@ def main():
     # Load options
     parser = argparse.ArgumentParser(description='Attribute Learner')
     # parser.add_argument('--config', type=str, default="configs.yolact_base" 
-    parser.add_argument('--config', type=str, default="configs.mask_rcnn" 
+    parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
                         ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
     parser.add_argument("--local_rank", type=int, help="local_rank")    
     parser.add_argument("--resume", type=bool, default=False , help="local_rank")  

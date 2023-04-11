@@ -66,10 +66,10 @@ class Trainer:
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
             model_dict.update(pretrained_dict)
             model.load_state_dict(model_dict)
-        # if opt.resume:
-        #     if local_rank == 0: 
-        #         model.load_state_dict(torch.load(os.path.join(opt.out_path, "last_epoch_weights.pth"), map_location = device))
-        #         print("Load resume model")
+        if opt.resume:
+            if local_rank == 0: 
+                model.load_state_dict(torch.load(os.path.join(opt.out_path, "last_epoch_weights.pth"), map_location = device))
+                print("Load resume model")
         # ------------------------------------------------------------------------------
         # model.train()  
 

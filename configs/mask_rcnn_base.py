@@ -20,9 +20,9 @@ def get_opts(Train=True):
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'verseg'
+    opt.exp_name = 'coco'
     """
-    [ voc ]
+    [ voc, verseg, coco ]
     """
     # get annotation file in current seting    
 

@@ -20,9 +20,9 @@ def get_opts(Train=True):
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'voc'
+    opt.exp_name = 'coco'
     """
-    [ voc, verseg ]
+    [ voc, verseg, coco ]
     """
     # get annotation file in current seting
     
@@ -72,7 +72,7 @@ def get_opts(Train=True):
     opt.ngpu = 2
     opt.Init_Epoch          = 0
     opt.Freeze_Epoch    = 50 #50
-    opt.Freeze_batch_size   = int(4/2)
+    opt.Freeze_batch_size   = int(28/2)
     opt.Freeze_lr           = 1e-3
     #----------------------------------------------------#
     #   解凍階段訓練參數
@@ -80,7 +80,7 @@ def get_opts(Train=True):
     #   占用的顯存較大，網絡所有的參數都會發生改變
     #----------------------------------------------------#
     opt.UnFreeze_Epoch  = 100 #100
-    opt.Unfreeze_batch_size = int(2/1)
+    opt.Unfreeze_batch_size = int(8/1)
     opt.Unfreeze_lr         = 1e-4
     #------------------------------------------------------#
     #   是否進行凍結訓練，默認先凍結主幹訓練後解凍訓練。

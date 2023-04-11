@@ -4,6 +4,7 @@ import torch.nn as nn
 import importlib
 import torch.optim as optim
 from models.transform import Augmentation
+from annotation.train_utils.coco_utils import CocoDetection
 
 def weights_init(net, init_type='normal', init_gain = 0.02):
     def init_func(m):
@@ -57,20 +58,28 @@ def get_optimizer(model, opt, optimizer_type):
         }[optimizer_type]   
     return optimizer
 
-def generate_loader(opt):      
+def generate_loader(opt):
+    if opt.exp_name == "coco":
+        train_dataset = CocoDetection(opt.train_image_path, opt.train_coco, dataset="train", net_type = opt.net, label_map = opt.COCO_LABEL_MAP)
+        val_dataset = CocoDetection(opt.val_image_path, opt.val_coco, dataset="val", net_type = opt.net, label_map = opt.COCO_LABEL_MAP)
+        if opt.net == 'yolact':
+            from inst_model.yolact.utils.dataloader import yolact_dataset_collate        
+            dataset_collate = yolact_dataset_collate 
+        else:
+            from inst_model.Mask_RCNN.utils.dataloader import mask_dataset_collate 
+            dataset_collate = mask_dataset_collate 
+    else:
+        if opt.net == 'yolact':
+            from inst_model.yolact.utils.dataloader import yolactDataset, yolact_dataset_collate        
+            train_dataset   = yolactDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+            val_dataset     = yolactDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+            dataset_collate = yolact_dataset_collate 
 
-    if opt.net == 'yolact':
-        from inst_model.yolact.utils.dataloader import yolactDataset, yolact_dataset_collate        
-        train_dataset   = yolactDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
-        val_dataset     = yolactDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
-        dataset_collate = yolact_dataset_collate 
-
-    elif opt.net == 'Mask_RCNN':
-        from inst_model.Mask_RCNN.utils.dataloader import MaskDataset, mask_dataset_collate        
-        train_dataset   = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
-        val_dataset     = MaskDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
-        # val_dataset     = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
-        dataset_collate = mask_dataset_collate 
+        elif opt.net == 'Mask_RCNN':
+            from inst_model.Mask_RCNN.utils.dataloader import MaskDataset, mask_dataset_collate        
+            train_dataset   = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+            val_dataset     = MaskDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
+            dataset_collate = mask_dataset_collate 
     
 
     batch_size      = opt.batch_size
@@ -84,6 +93,7 @@ def generate_loader(opt):
         val_sampler     = None
         shuffle         = True
 
+    # opt.num_workers = 1
     gen             = torch.utils.data.DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = opt.num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=dataset_collate, sampler=train_sampler)
     gen_val         = torch.utils.data.DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = opt.num_workers, pin_memory=True, 
