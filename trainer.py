@@ -40,20 +40,21 @@ class Trainer:
             local_rank      = 0
             rank            = 0
 
-        model, self.criterion  = models.get_model(opt, train_mode = False)  
-        # -------------------------------------------------------------------------------  
-        if local_rank == 0:           
-            IM_SHAPE = (1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1])
-            rndm_input = torch.autograd.Variable(
-                torch.rand(1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1]), 
-                requires_grad = False).cpu()            
+        # model, self.criterion  = models.get_model(opt, train_mode = False)  
+        model, self.criterion  = models.get_model(opt)  
+        # # -------------------------------------------------------------------------------  
+        # if local_rank == 0:           
+        #     IM_SHAPE = (1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1])
+        #     rndm_input = torch.autograd.Variable(
+        #         torch.rand(1, opt.IM_SHAPE[2], opt.IM_SHAPE[0], opt.IM_SHAPE[1]), 
+        #         requires_grad = False).cpu()            
 
-            # if opt.net != "Mask_RCNN":
-            #     opt.writer.add_graph(model, rndm_input)   # error with mask rcnn      
+        #     # if opt.net != "Mask_RCNN":
+        #     #     opt.writer.add_graph(model, rndm_input)   # error with mask rcnn      
 
-            write_info(opt.out_path, model, IM_SHAPE, "model.txt")  
-        # ------------------------------------------------------------------------------
-        model, _  = models.get_model(opt)  
+        #     write_info(opt.out_path, model, IM_SHAPE, "model.txt")  
+        # # ------------------------------------------------------------------------------
+        # model, _  = models.get_model(opt)  
         # ------------------------------------------------------------------------------
         if opt.model_path != '':
             #------------------------------------------------------#
