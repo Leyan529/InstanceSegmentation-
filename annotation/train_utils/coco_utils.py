@@ -218,67 +218,64 @@ class CocoDetection(data.Dataset):
         target = self.parse_targets(img_id, coco_target, w, h)
         
 
-        if True:
-            if len(target["area"]) == 0: return None, None, None, None
-            img = cv2.imread(os.path.join(self.img_root, path))
-            img       = np.array(img, np.float32)
-            height, width, _ = img.shape
+        
+        img = cv2.imread(os.path.join(self.img_root, path))
+        img       = np.array(img, np.float32)
+        height, width, _ = img.shape
 
-            masks = target["masks"].numpy().astype(np.float32)
+        masks = target["masks"].numpy().astype(np.float32)
 
-            num_crowds = sum([x for x in target['iscrowd']])
+        num_crowds = sum([x for x in target['iscrowd']])
 
-            boxes_classes = []                              
-            for i in range(len(target["labels"])):
-                bbox        = target['boxes'][i]
-                # final_box   = [bbox[0], bbox[1], 0 + bbox[2], 0 + bbox[3], self.label_map[int(target['labels'][i])] - 1]
-                final_box   = [bbox[0], bbox[1], 0 + bbox[2], 0 + bbox[3], target['labels'][i] - 1]
-                boxes_classes.append(final_box)
-            boxes_classes = np.array(boxes_classes, np.float32)
+        boxes_classes = []                              
+        for i in range(len(target["labels"])):
+            bbox        = target['boxes'][i]
+            # final_box   = [bbox[0], bbox[1], 0 + bbox[2], 0 + bbox[3], self.label_map[int(target['labels'][i])] - 1]
+            final_box   = [bbox[0], bbox[1], 0 + bbox[2], 0 + bbox[3], target['labels'][i] - 1]
+            boxes_classes.append(final_box)
+        boxes_classes = np.array(boxes_classes, np.float32)
 
-            # print(type(boxes_classes), len(boxes_classes), height, width)
-            if len(boxes_classes) > 1:
-                boxes_classes[:, [0, 2]] /= width
-                boxes_classes[:, [1, 3]] /= height   
-            else:
-                boxes_classes[0, [0, 2]] /= width
-                boxes_classes[0, [1, 3]] /= height   
-
-            # transforms=Augmentation([544, 544])
-            img, masks, boxes, labels = self.augmentation(img, masks, boxes_classes[:, :4], {'num_crowds': num_crowds, 'labels': boxes_classes[:, 4]})
-            num_crowds  = labels['num_crowds']
-            labels      = labels['labels']
-            boxes       = np.concatenate([boxes, np.expand_dims(labels, axis=1)], -1) # 0123 x y w n
-
-            img = img.astype(np.uint8)           
-
-            # boxes[:, [0, 2]] *= 544
-            # boxes[:, [1, 3]] *= 544 
-
-            # for b in boxes:                                 
-            #     cv2.rectangle(img, (int(b[0]), int(b[1])), (int(b[2]), int(b[3])), (255,255,0), 2) # 邊框
-            # cv2.imshow("img", img)
-            # cv2.waitKey(0)
-
-            if self.net_type == "yolact":        
-                image = preprocess_input(img)
-                return np.transpose(image, [2, 0, 1]), boxes, masks, num_crowds, 
-            elif self.net_type == "Mask_RCNN":  
-                image = preprocess_input(img)
-                image = np.transpose(image, [2, 0, 1])
-                image = torch.from_numpy(np.array(image, np.float32))
-
-                labels = boxes[:, -1]        
-
-                target = dict(image_id=torch.tensor([img_id], dtype=torch.int64), 
-                            boxes=torch.tensor(boxes[:, :-1], dtype=torch.float32), 
-                            labels=torch.tensor(boxes[:, -1], dtype=torch.int64), 
-                            masks=torch.tensor(masks, dtype=torch.uint8))
-                return image, target
+        # print(type(boxes_classes), len(boxes_classes), height, width)
+        if len(boxes_classes) > 1:
+            boxes_classes[:, [0, 2]] /= width
+            boxes_classes[:, [1, 3]] /= height   
         else:
-            if self.transforms is not None:
-                img, target = self.transforms(img, target)
-            return img, target
+            boxes_classes[0, [0, 2]] /= width
+            boxes_classes[0, [1, 3]] /= height   
+
+        # transforms=Augmentation([544, 544])
+        img, masks, boxes, labels = self.augmentation(img, masks, boxes_classes[:, :4], {'num_crowds': num_crowds, 'labels': boxes_classes[:, 4]})
+        num_crowds  = labels['num_crowds']
+        labels      = labels['labels']
+        boxes       = np.concatenate([boxes, np.expand_dims(labels, axis=1)], -1) # 0123 x y w n
+
+        img = img.astype(np.uint8)           
+
+        # boxes[:, [0, 2]] *= 544
+        # boxes[:, [1, 3]] *= 544 
+
+        # for b in boxes:                                 
+        #     cv2.rectangle(img, (int(b[0]), int(b[1])), (int(b[2]), int(b[3])), (255,255,0), 2) # 邊框
+        # cv2.imshow("img", img)
+        # cv2.waitKey(0)
+
+        if self.net_type == "yolact":
+            if len(target["area"]) == 0: return None, None, None, None        
+            image = preprocess_input(img)
+            return np.transpose(image, [2, 0, 1]), boxes, masks, num_crowds, 
+        elif self.net_type == "Mask_RCNN":  
+            image = preprocess_input(img)
+            image = np.transpose(image, [2, 0, 1])
+            image = torch.from_numpy(np.array(image, np.float32))
+
+            labels = boxes[:, -1]        
+
+            target = dict(image_id=torch.tensor([img_id], dtype=torch.int64), 
+                        boxes=torch.tensor(boxes[:, :-1], dtype=torch.float32), 
+                        labels=torch.tensor(boxes[:, -1], dtype=torch.int64), 
+                        masks=torch.tensor(masks, dtype=torch.uint8))
+            return image, target
+        
 
 
     def __len__(self):
