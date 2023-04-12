@@ -14,9 +14,13 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, default="configs.yolact_base" 
     # parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
                         ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
-    parser.add_argument('--Image_dir', type=str, default="/home/leyan/DataSet/COCO/val2014")
-    parser.add_argument('--Json_path', type=str, default="/home/leyan/DataSet/COCO/annotations_trainval2014/annotations/instances_val2014.json")
-    parser.add_argument('--classes_path', type=str, default='model_data/coco_classes.txt')
+    # parser.add_argument('--Image_dir', type=str, default="/home/leyan/DataSet/COCO/val2014")
+    # parser.add_argument('--Json_path', type=str, default="/home/leyan/DataSet/COCO/annotations_trainval2014/annotations/instances_val2014.json")
+    # parser.add_argument('--classes_path', type=str, default='model_data/coco_classes.txt')
+    
+    parser.add_argument('--Image_dir', type=str, default="/home/leyan/DataSet/VOCdevkit/VOC2012/JPEGImages")
+    parser.add_argument('--Json_path', type=str, default="/home/leyan/DataSet/VOCdevkit/VOC2012/Annotations/VOC2012.json")
+    parser.add_argument('--classes_path', type=str, default='model_data/voc_classes.txt')    
     parser.add_argument("--map_mode", type=int, default=0 , help="evaluate mode")  
 
     conf = parser.parse_args() 
@@ -67,7 +71,7 @@ if __name__ == "__main__":
     if map_mode == 0 or map_mode == 1:
         print("Load model.")
         print("Load model done.")
-        model = opt.Model_Pred(classes_path=opt.classes_path, num_classes=opt.num_classes, \
+        model = opt.Model_Pred(num_classes=opt.num_classes, \
                             confidence = 0.05, nms_iou = 0.5)
         print("Get predict result.")
         make_json   = Make_json(map_out_path, COCO_LABEL_MAP)
