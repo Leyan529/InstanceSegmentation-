@@ -11,6 +11,7 @@ import threading
 from itertools import product
 from math import sqrt
 from pycocotools.coco import COCO
+import torch.distributed as dist
 
 def get_data(root_path, dataType):
     #------------------------------#  
@@ -22,7 +23,10 @@ def get_data(root_path, dataType):
         classes_path    = 'model_data/voc_classes.txt'   
     elif dataType == "verseg":
         data_path = os.path.join(root_path, 'VERSEG')    
-        classes_path    = 'model_data/verseg_classes.txt'   
+        classes_path    = 'model_data/verseg_classes.txt'  
+    elif dataType == "coco":
+        data_path = os.path.join(root_path, 'COCO')    
+        classes_path    = 'model_data/coco_classes.txt'  
 
     return data_path, classes_path
 
@@ -234,3 +238,43 @@ class LossHistory():
             self.best_epoch_loss = epoch_loss           
             self.counter = 0 
             self.stopping = False
+
+def is_dist_avail_and_initialized():
+    """检查是否支持分布式环境"""
+    if not dist.is_available():
+        return False
+    if not dist.is_initialized():
+        return False
+    return True
+    
+def get_world_size():
+    if not is_dist_avail_and_initialized():
+        return 1
+    return dist.get_world_size()
+
+def reduce_dict(input_dict, average=True):
+    """
+    Args:
+        input_dict (dict): all the values will be reduced
+        average (bool): whether to do average or sum
+    Reduce the values in the dictionary from all processes so that all processes
+    have the averaged results. Returns a dict with the same fields as
+    input_dict, after reduction.
+    """
+    world_size = get_world_size()
+    if world_size < 2:  # 单GPU的情况
+        return input_dict
+    with torch.no_grad():  # 多GPU的情况
+        names = []
+        values = []
+        # sort the keys so that they are consistent across processes
+        for k in sorted(input_dict.keys()):
+            names.append(k)
+            values.append(input_dict[k])
+        values = torch.stack(values, dim=0)
+        dist.all_reduce(values)
+        if average:
+            values /= world_size
+
+        reduced_dict = {k: v for k, v in zip(names, values)}
+        return reduced_dict            

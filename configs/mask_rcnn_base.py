@@ -20,7 +20,7 @@ def get_opts(Train=True):
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'coco'
+    opt.exp_name = 'voc'
     """
     [ voc, verseg, coco ]
     """

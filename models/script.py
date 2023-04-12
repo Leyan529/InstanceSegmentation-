@@ -2,11 +2,12 @@ import importlib
 import threading
 from tqdm import tqdm
 import torch
-from utils.helpers import get_lr
+from utils.helpers import get_lr, reduce_dict
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import nn
 import os
+import math, sys
 
 
 def fit_yolact(model_train, model, criterion, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, opt):
@@ -158,58 +159,61 @@ def fit_mask_rcnn(model_train, model, criterion, loss_history, optimizer, epoch,
     for iteration, batch in enumerate(gen):
         if iteration >= epoch_step:
             break
-        batch_loss = []
         images, targets = batch[0], batch[1]
         with torch.no_grad():
             if cuda:
-                images      = [img.cuda(local_rank) for img in images]
-                targets     = [ {key:  target[key].cuda(local_rank) for key in target.keys()}
-                                for target in targets                                                            
-                ]
+                images = list(image.cuda(local_rank) for image in images)
+                targets = [{k: v.cuda(local_rank) for k, v in t.items()} for t in targets]
         #----------------------#
         #   清零梯度
         #----------------------#
         optimizer.zero_grad()
         if not fp16:
-            for image, target in zip(images, targets):
-                #----------------------#
-                #   前向传播 + 计算损失
-                #----------------------#
-                losses = model_train(image, target)
-                total_loss = sum([losses[k] for k in losses])
-                batch_loss.append(total_loss)
-            loss = torch.stack(batch_loss, dim=0).sum(dim=0).sum(dim=0) / len(batch_loss)   
+            #----------------------#
+            #   前向传播 + 计算损失
+            #----------------------#           
+            loss_dict = model(images, targets)
+            losses = sum(loss for loss in loss_dict.values())
+            loss_dict_reduced = reduce_dict(loss_dict)
+            loss = sum(loss for loss in loss_dict_reduced.values())
+
 
             #----------------------#
             #   反向传播
             #----------------------#
-            loss.backward()
+            losses.backward()
             optimizer.step()
         else:
             from torch.cuda.amp import autocast
             with autocast():
-                for image, target in zip(images, targets):
-                    #----------------------#
-                    #   前向传播 + 计算损失
-                    #----------------------#
-                    losses = model_train(image, target)
-                    total_loss = sum([losses[k] for k in losses])
-                    batch_loss.append(total_loss)
-                loss = torch.stack(batch_loss, dim=0).sum(dim=0).sum(dim=0) / len(batch_loss)                
+                #----------------------#
+                #   前向传播 + 计算损失
+                #----------------------#               
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+            loss_dict_reduced = reduce_dict(loss_dict)     
+            loss = sum(loss for loss in loss_dict_reduced.values())
+            
             #----------------------#
             #   反向传播
             #----------------------#
-            scaler.scale(loss).backward()
+            scaler.scale(losses).backward()
             scaler.step(optimizer)
             scaler.update()
+
+        loss_value = loss.item()
+        if not math.isfinite(loss_value):  # 当计算的损失为无穷大时停止训练
+            print("Loss is {}, stopping training".format(loss_value))
+            print(loss_dict_reduced)
+            sys.exit(1)
         
-        total_loss += loss.item()
+        total_loss += loss_value
         
         if local_rank == 0:
-            pbar.set_postfix(**{'total_loss': total_loss.item() / (iteration + 1), 
+            pbar.set_postfix(**{'total_loss': total_loss / (iteration + 1), 
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
-        loss_history.step(total_loss.item() / (iteration + 1), (epoch_step * epoch + iteration + 1))
+        loss_history.step(total_loss / (iteration + 1), (epoch_step * epoch + iteration + 1))
 
     if local_rank == 0:
         pbar.close()
@@ -227,21 +231,23 @@ def fit_mask_rcnn(model_train, model, criterion, loss_history, optimizer, epoch,
             break
         batch_loss = []
         images, targets = batch[0], batch[1]
+        if not images: continue
         with torch.no_grad():
-            if cuda:
-                images      = [img.cuda(local_rank) for img in images]
-                targets     = [ {key:  target[key].cuda(local_rank) for key in target.keys()}
-                                for target in targets                                                            
-                ]
+            if cuda:               
+                images = list(image.cuda(local_rank) for image in images)
+                targets = [{k: v.cuda(local_rank) for k, v in t.items()} for t in targets]
             optimizer.zero_grad()
-            for image, target in zip(images, targets):
-                #----------------------#
-                #   前向传播 + 计算损失
-                #----------------------#
-                losses = model_train_eval(image, target)
-                total_loss = sum([losses[k] for k in losses])
-                batch_loss.append(total_loss)                
-            loss = torch.stack(batch_loss, dim=0).sum(dim=0).sum(dim=0) / len(batch_loss) 
+            #----------------------#
+            #   前向传播 + 计算损失
+            #----------------------#           
+            loss_dict = model_train_eval(images, targets)
+            losses = sum(loss for loss in loss_dict.values())
+            loss_dict_reduced = reduce_dict(loss_dict)
+            loss = sum(loss for loss in loss_dict_reduced.values())
+            
+            #----------------------#
+            #   前向传播 + 计算损失
+            #----------------------#                        
             val_loss += loss.item()
             
             if local_rank == 0:
