@@ -11,27 +11,19 @@ import importlib
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attribute Learner')
-    parser.add_argument('--config', type=str, default="configs.yolact_base" 
-    # parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
+    # parser.add_argument('--config', type=str, default="configs.yolact_base" 
+    parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
                         ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
-    # parser.add_argument('--Image_dir', type=str, default="/home/leyan/DataSet/COCO/val2014")
-    # parser.add_argument('--Json_path', type=str, default="/home/leyan/DataSet/COCO/annotations_trainval2014/annotations/instances_val2014.json")
-    # parser.add_argument('--classes_path', type=str, default='model_data/coco_classes.txt')
     
-    parser.add_argument('--Image_dir', type=str, default="/home/leyan/DataSet/VOCdevkit/VOC2012/JPEGImages")
-    parser.add_argument('--Json_path', type=str, default="/home/leyan/DataSet/VOCdevkit/VOC2012/Annotations/VOC2012.json")
-    parser.add_argument('--classes_path', type=str, default='model_data/voc_classes.txt')    
+    parser.add_argument('--Image_dir', type=str, default="",help ="default by config file")
+    parser.add_argument('--Json_path', type=str, default="",help ="default by config file")
+    parser.add_argument('--classes_path', type=str, default='',help ="default by config file")  
     parser.add_argument("--map_mode", type=int, default=0 , help="evaluate mode")  
 
     conf = parser.parse_args() 
     opt = importlib.import_module(conf.config).get_opts(Train=False)
-    for key, value in vars(conf).items():     
-        setattr(opt, key, value)
-    
-    d=vars(opt)
-
        
-    mode = opt.map_mode  
+    mode = conf.map_mode  
     get_classes = importlib.import_module("inst_model.%s.utils.utils"%opt.net).get_classes
     get_coco_label_map = importlib.import_module("inst_model.%s.utils.utils"%opt.net).get_coco_label_map
     Make_json = importlib.import_module("inst_model.%s.utils.utils_map"%opt.net).Make_json
@@ -42,23 +34,24 @@ if __name__ == "__main__":
     #   map_mode为1代表仅仅获得预测结果。
     #   map_mode为2代表仅仅计算指标。
     #-------------------------------------------------------------------------------------------------------------------#
-    map_mode        = opt.map_mode
+    map_mode        = conf.map_mode
     #-------------------------------------------------------#
     #   评估自己的数据集必须要修改
     #   所需要区分的类别对应的txt文件
     #-------------------------------------------------------#
-    classes_path = opt.classes_path  
+    classes_path = conf.classes_path if conf.classes_path else opt.classes_path
     #-------------------------------------------------------#
     #   获得测试用的图片路径和标签
     #   默认指向根目录下面的datasets/coco文件夹
     #-------------------------------------------------------#
-    Image_dir     = opt.Image_dir
-    Json_path     = opt.Json_path
+    Image_dir     = conf.Image_dir if conf.Image_dir else opt.Image_dir
+    Json_path     = conf.Json_path if conf.Json_path else opt.Json_path
     #-------------------------------------------------------#
     #   结果输出的文件夹，默认为map_out
     #   里面存放了一些json文件，主要是检测结果。
     #-------------------------------------------------------#
     map_out_path    = os.path.join(opt.out_path, 'map_out')
+    os.makedirs(map_out_path, exist_ok=True)
     #---------------------------#
     #   读取数据集对应的txt
     #---------------------------#
@@ -101,3 +94,5 @@ if __name__ == "__main__":
         bbox_eval.evaluate()
         bbox_eval.accumulate()
         bbox_eval.summarize()
+    
+    print("finished")

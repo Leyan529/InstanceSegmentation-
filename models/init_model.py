@@ -78,12 +78,7 @@ def generate_loader(opt):
             dataset_collate = yolact_dataset_collate        
 
         elif opt.net == 'Mask_RCNN':
-            from inst_model.Mask_RCNN.utils.dataloader import MaskDataset, mask_dataset_collate
-            # data_transform = {
-            #     "train": transforms.Compose([transforms.ToTensor(),
-            #                                 transforms.RandomHorizontalFlip(0.5)]),
-            #     "val": transforms.Compose([transforms.ToTensor()])
-            # }        
+            from inst_model.Mask_RCNN.utils.dataloader import MaskDataset, mask_dataset_collate       
             train_dataset   = MaskDataset(opt.train_image_path, opt.train_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
             val_dataset     = MaskDataset(opt.val_image_path, opt.val_coco, opt.COCO_LABEL_MAP, Augmentation(opt.input_shape))
             dataset_collate = mask_dataset_collate 

@@ -177,6 +177,21 @@ def get_opts(Train=True):
     else:
         from inst_model.Mask_RCNN.mask_rcnn import Mask_RCNN
         opt.Model_Pred = Mask_RCNN
+
+        if opt.exp_name == 'coco':
+            year = 2014
+            opt.Image_dir = os.path.join(opt.data_root, 
+                    f"COCO/val{year}")
+            opt.Json_path = os.path.join(opt.data_root, 
+                    f"COCO/annotations_trainval{year}/annotations/instances_val{year}.json")
+
+        elif opt.exp_name == 'voc':
+            year = 2012
+            opt.Image_dir = os.path.join(opt.data_root, 
+                    f"VOCdevkit/VOC{year}/JPEGImages")
+            opt.Json_path = os.path.join(opt.data_root, 
+                    f"VOCdevkit/VOC{year}/Annotations/VOC{year}.json")
+
  
     return opt
 

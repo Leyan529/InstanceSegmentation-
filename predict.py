@@ -12,8 +12,8 @@ import importlib
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attribute Learner')
-    parser.add_argument('--config', type=str, default="configs.yolact_base" 
-    # parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
+    # parser.add_argument('--config', type=str, default="configs.yolact_base" 
+    parser.add_argument('--config', type=str, default="configs.mask_rcnn_base" 
                         ,help = 'Path to config .opt file. Leave blank if loading from opts.py')
     parser.add_argument("--mode", type=str, default="video" , help="predict or video")  
     parser.add_argument("--video_fps", type=float, default=25.0, help="video_fps")  
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     
     d=vars(opt)
 
-    model = opt.Model_Pred(classes_path=opt.classes_path, num_classes=opt.num_classes)   
+    model = opt.Model_Pred(classes_path=opt.classes_path, num_classes=opt.num_classes, model_path=os.path.join(opt.out_path, "best_epoch_weights.pth"))   
     mode = opt.mode
     #----------------------------------------------------------------------------------------------------------#
     video_path      = opt.video_path
