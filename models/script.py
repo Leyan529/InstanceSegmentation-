@@ -214,7 +214,6 @@ def fit_mask_rcnn(model_train, model, criterion, loss_history, optimizer, epoch,
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
         loss_history.step(total_loss / (iteration + 1), (epoch_step * epoch + iteration + 1))
-        break
 
     if local_rank == 0:
         pbar.close()
@@ -256,7 +255,6 @@ def fit_mask_rcnn(model_train, model, criterion, loss_history, optimizer, epoch,
                                     'val_loss': val_loss / (iteration + 1), 
                                     'lr'        : get_lr(optimizer)})
                 pbar.update(1)
-            break
 
     if local_rank == 0:
         pbar.close()
