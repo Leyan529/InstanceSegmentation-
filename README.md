@@ -87,6 +87,7 @@ The vertebra Dataset is clone from [VerSeg](https://github.com/TWokulski/VerSeg)
 ## Methods
 - **MASK_RCNN**
 - **Yolact**
+#### Pretrain-Weights [download link](https://1drv.ms/f/s!AvbkzP-JBXPAhkCM91SYNDMdKMtL?e=ilEdfK)
 
 
 ## Prerequisites
