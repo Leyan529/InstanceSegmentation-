@@ -1,63 +1,89 @@
 # InstanceSegmentation
 My Frame work for InstanceSegmentation
 ## Overview
-I organizize the Instance Segmentation algorithms proposed in recent years, and focused on **`Pascal VOC`, `VerSeg vertebra` Dataset.**
+I organizize the Instance Segmentation algorithms proposed in recent years, and focused on **`Pascal VOC`, `VerSeg vertebra` and `coco` Dataset.**
 This frame work also include **`EarlyStopping mechanism`**.
 
 
 ## Datasets:
 
-I used 2 different datases: **`Pascal VOC`, `VerSeg vertebra`. Statistics of datasets I used for experiments is shown below
+I used 3 different datases: **`Pascal VOC`, `VerSeg vertebra` and `coco`. Statistics of datasets I used for experiments is shown below
 
 - **VOC**:
   Download the voc images and annotations from [VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007) or [VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012). Make sure to put the files as the following structure:
 
--- VOC2007
-![](https://i.imgur.com/wncA2wC.png)
+  | Dataset                | Classes | #Train images/objects | #Validation images/objects |
+  |------------------------|:---------:|:-----------------------:|:----------------------------:|
+  | VOC2007                |    20   |      5011/12608       |           4952/-           |
+  | VOC2012                |    20   |      5717/13609       |           5823/13841       |
 
--- VOC2012
-![](https://i.imgur.com/v3AQelB.png)
+  -- VOC2007
+  * ![](https://i.imgur.com/wncA2wC.png)
 
-  
-  
-| Dataset                | Classes | #Train images/objects | #Validation images/objects |
-|------------------------|:---------:|:-----------------------:|:----------------------------:|
-| VOC2007                |    20   |      209/633       |          213/582        |
-| VOC2012                |    20   |      1464/3507     |         1449/3422       |
+  -- VOC2012
+  * ![](https://i.imgur.com/v3AQelB.png)
 
   ```
   VOCDevkit
   ├── VOC2007
-  │   ├── JPEGImages  
-  │   ├── SegmentationClass
-  │   ├── ...
+  │   ├── Annotations  
+  │   ├── ImageSets
+  │   ├── JPEGImages
   │   └── ...
   └── VOC2012
-      ├── JPEGImages  
-      ├── SegmentationClass
-      ├── ...
+      ├── Annotations  
+      ├── ImageSets
+      ├── JPEGImages
       └── ...
   ```
+  Processed File: [download link](https://1drv.ms/u/s!AvbkzP-JBXPAhk51a2a6DLg_Hgub?e=PhUN2s)
+  
   
 - **VerSeg vertebra**:
 The vertebra Dataset is clone from [VerSeg](https://github.com/TWokulski/VerSeg).
 
 
-```
-  VERSEG
-  ├── Train
-  │     ├── annotations.json
-  │     ├──  JPEGImages
-  │     ├── *.jpg
-  │     
-  │── Validation
-      ├── annotations.json
-      ├── JPEGImages
-          ├── *.jpg 
-```
+  ```
+    VERSEG
+    ├── Train
+    │     ├── annotations.json
+    │     ├──  JPEGImages
+    │     ├── *.jpg
+    │     
+    │── Validation
+        ├── annotations.json
+        ├── JPEGImages
+            ├── *.jpg 
+  ```
+  Processed File: [download link](https://1drv.ms/u/s!AvbkzP-JBXPAhk8nssrL5d6SoOA9?e=uMlmEm)
 
+- **COCO**:
+  Download the coco images and annotations from [coco website](http://cocodataset.org/#download). Make sure to put the files as the following structure:
 
-
+  | Dataset                | Classes | #Train images/objects | #Validation images/objects |
+  |------------------------|:---------:|:-----------------------:|:----------------------------:|
+  | COCO2014               |    80   |         83k/-         |            41k/-           |
+  | COCO2017               |    80   |         118k/-        |             5k/-           |
+  ```
+    COCO
+    ├── annotations
+    │   ├── instances_train2014.json
+    │   ├── instances_train2017.json
+    │   ├── instances_val2014.json
+    │   └── instances_val2017.json
+    │── images
+    │   ├── train2014
+    │   ├── train2017
+    │   ├── val2014
+    │   └── val2017
+    └── anno_pickle
+        ├── COCO_train2014.pkl
+        ├── COCO_val2014.pkl
+        ├── COCO_train2017.pkl
+        └── COCO_val2017.pkl
+  ```
+  Processed File: [download link](https://1drv.ms/f/s!AvbkzP-JBXPAhlDiyVy9wsDGCCj8?e=nN58aZ)
+  
 ## Methods
 - **MASK_RCNN**
 - **Yolact**
@@ -83,13 +109,13 @@ pip install -r requirements.txt -f https://download.pytorch.org/whl/torch_stable
 ### 1. Prepare the dataset
 * **Create your own `annotation.{dataset}.py` then create `Segmentation/train.txt` , `Segmentation/val.txt` let data to load.** 
 * **Prepare pretrain download weight to `model_data` .** 
-* **Add new data in `helps/choose_data.py`. **
+* **Add new data in `helps/choose_data.py`.**
 
 ### 2. Create own model
 * **Copy `inst_model` directory and write self required function, like `dataset_collate, Dataset, freeze_backbone, unfreeze_backbone`... etc.** 
-* **Maintaion self directory like `nets, utils`. ** 
-* **Maintaion self detection configuration file like `model.py`. ** 
-* **Add new data in `helps/choose_model.py`. **
+* **Maintaion self directory like `nets, utils`.** 
+* **Maintaion self detection configuration file like `model.py`.** 
+* **Add new data in `helps/choose_model.py`.**
 
 ### 3. Train (Freeze backbone + UnFreeze backbone) 
 * setup your `root_path` , choose `DataType` and switch segmentation model library import.
