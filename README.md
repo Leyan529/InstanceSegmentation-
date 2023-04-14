@@ -7,7 +7,7 @@ This frame work also include **`EarlyStopping mechanism`**.
 
 ## Datasets:
 
-I used 3 different datases: **`Pascal VOC`, `VerSeg vertebra` and `coco`. Statistics of datasets I used for experiments is shown below
+I used 3 different datases: **`Pascal VOC`, `VerSeg vertebra` and `coco`**. Statistics of datasets I used for experiments is shown below
 
 - **VOC**:
   Download the voc images and annotations from [VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007) or [VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012). Make sure to put the files as the following structure:
