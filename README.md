@@ -62,8 +62,8 @@ The vertebra Dataset is clone from [VerSeg](https://github.com/TWokulski/VerSeg)
 
   | Dataset                | Classes | #Train images/objects | #Validation images/objects |
   |------------------------|:---------:|:-----------------------:|:----------------------------:|
-  | COCO2014               |    80   |         83k/-         |            41k/-           |
-  | COCO2017               |    80   |         118k/-        |             5k/-           |
+  | COCO2014               |    21   |         64k/-         |            31k/-           |
+  | COCO2017               |    21   |         92k/-        |             3k/-           |
   ```
     COCO
     ├── annotations
@@ -76,11 +76,11 @@ The vertebra Dataset is clone from [VerSeg](https://github.com/TWokulski/VerSeg)
     │   ├── train2017
     │   ├── val2014
     │   └── val2017
-    └── anno_pickle
-        ├── COCO_train2014.pkl
-        ├── COCO_val2014.pkl
-        ├── COCO_train2017.pkl
-        └── COCO_val2017.pkl
+    └── mask
+        ├── train2014
+        ├── train2017
+        ├── val2014
+        └── val2017
   ```
   Processed File: [download link](https://1drv.ms/f/s!AvbkzP-JBXPAhlDiyVy9wsDGCCj8?e=nN58aZ)
   
