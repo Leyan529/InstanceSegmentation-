@@ -20,7 +20,7 @@ def get_opts(Train=True):
 
 
     opt.out_root = 'work_dirs/'
-    opt.exp_name = 'voc'
+    opt.exp_name = 'coco'
     """
     [ voc, verseg, coco ]
     """
@@ -29,19 +29,16 @@ def get_opts(Train=True):
     opt.data_path, opt.classes_path = get_data(opt.data_root, opt.exp_name)
     # importlib.import_module("annotation.{}".format(opt.exp_name)).get_annotation(opt.data_root, opt.classes_path) 
     #############################################################################################
-    #   phi             所使用到的yolov7的版本，本仓库一共提供两个：
-    #                   l : 对应yolov7
-    #                   x : 对应yolov7_x
     #############################################################################################    
-    opt.net = 'Mask_RCNN'     # [yolact]
+    opt.net = 'Mask_RCNN'     # [yolact, Mask_RCNN]
     opt.model_path      = '' 
-    opt.input_shape     = [544, 544]  
+    opt.input_shape     = None  
     opt.pretrained      = True
-    opt.IM_SHAPE = (opt.input_shape[0], opt.input_shape[1], 3)
+    opt.IM_SHAPE = (544, 544, 3)
     #------------------------------------------------------#
-    #   获取先验框大小
+    #   统计所有图像比例在bins区间中的位置索引
     #------------------------------------------------------#
-    opt.anchors_size    = [24, 48, 96, 192, 384]
+    opt.aspect_ratio_group_factor    = 3
     #---------------------------------------------------------#
     #   下采樣的倍數8、16 
     #   8下采樣的倍數較小、理論上效果更好，但也要求更大的顯存
@@ -53,8 +50,6 @@ def get_opts(Train=True):
         opt.data_root, opt.classes_path) 
 
     opt.num_classes = opt.num_classes + 1
-    opt.anchors     = get_anchors(opt.input_shape, opt.anchors_size)
-    opt.anchors     = torch.from_numpy(opt.anchors).type(torch.FloatTensor)
     #---------------------------#
     #   讀取數據集對應的txt
     #---------------------------# 

@@ -334,6 +334,30 @@ class Resize(object):
 
         return image, masks, boxes, labels
 
+class ResizeS(object):
+    def __init__(self, input_scale, resize_gt=True):
+        self.resize_gt      = resize_gt
+        self.input_scale    = input_scale
+
+    def __call__(self, image, masks, boxes, labels=None):
+        image_h, image_w, _ = image.shape
+        width, height       = int(image_w*self.input_scale), int(image_h*self.input_scale)
+        image               = cv2.resize(image, (width, height))
+
+        if self.resize_gt:
+            masks = masks.transpose((1, 2, 0))
+            masks = cv2.resize(masks, (width, height))
+
+            if len(masks.shape) == 2:
+                masks = np.expand_dims(masks, 0)
+            else:
+                masks = masks.transpose((2, 0, 1))
+
+            boxes[:, [0, 2]] *= (width / image_w)
+            boxes[:, [1, 3]] *= (height / image_h)
+
+        return image, masks, boxes, labels        
+
 class Pad(object):
     def __init__(self, input_shape, pad_gt=True):
         self.height = input_shape[0]
@@ -385,31 +409,51 @@ class BackboneTransform(object):
         return img.astype(np.float32), masks, boxes, labels
 
 class BaseTransform(object):
-    def __init__(self, input_shape):
-        self.augment = Compose(
-            [
-                ConvertFromInts(), 
-                Resize(input_shape), 
-            ]
-        )
+    def __init__(self, input_shape=None):
+        if input_shape:
+            self.augment = Compose(
+                [
+                    ConvertFromInts(), 
+                    Resize(input_shape), 
+                ]
+            )
+        else:
+            self.augment = Compose(
+                [
+                    ConvertFromInts(), 
+                    ResizeS(input_scale=0.5),
+                ]
+            )
 
     def __call__(self, img, masks=None, boxes=None, labels=None):
         return self.augment(img, masks, boxes, labels)
 
 class Augmentation(object):
-    def __init__(self, input_shape):
-        self.augment = Compose(
-            [
-                ConvertFromInts(),
-                ToAbsoluteCoords(),
-                PhotometricDistort(),
-                Expand(),
-                RandomSampleCrop(),
-                RandomMirror(),
-                Resize(input_shape),
-                ToPercentCoords(),
-            ]
-        )
+    def __init__(self, input_shape=None):
+        if input_shape:
+            self.augment = Compose(
+                [
+                    ConvertFromInts(),
+                    ToAbsoluteCoords(),
+                    PhotometricDistort(),
+                    Expand(),
+                    RandomSampleCrop(),
+                    RandomMirror(),
+                    Resize(input_shape),
+                    ToPercentCoords(),
+                ]
+            )
+        else:
+            self.augment = Compose(
+                [
+                    ConvertFromInts(),
+                    ToAbsoluteCoords(),
+                    Expand(),
+                    RandomMirror(),
+                    ResizeS(input_scale=0.5),
+                    ToPercentCoords(),
+                ]
+            )
 
     def __call__(self, img, masks, boxes, labels):
         return self.augment(img, masks, boxes, labels)
