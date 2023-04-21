@@ -421,7 +421,7 @@ class BaseTransform(object):
             self.augment = Compose(
                 [
                     ConvertFromInts(), 
-                    ResizeS(input_scale=0.2),
+                    ResizeS(input_scale=0.8),
                 ]
             )
 
@@ -450,8 +450,7 @@ class Augmentation(object):
                     ToAbsoluteCoords(),
                     Expand(),
                     RandomMirror(),
-                    ResizeS(input_scale=0.2),
-                    ToPercentCoords(),
+                    ResizeS(input_scale=0.8),
                 ]
             )
 
